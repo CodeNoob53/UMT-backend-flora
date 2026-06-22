@@ -13,6 +13,10 @@ const swaggerDocument = require('./swagger.json');
 
 const app = express();
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 app.use(cors());
 app.use(express.json());
 app.use('/admin', basicAuth, express.static('public/admin'));

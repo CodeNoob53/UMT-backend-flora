@@ -6,7 +6,7 @@ services:
     region: frankfurt
     buildCommand: npm install
     startCommand: npm start
-    healthCheckPath: /api/bouquets
+    healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: DB_URL
@@ -20,6 +20,10 @@ services:
       - key: CLD_API_KEY
         sync: false
       - key: CLD_API_SECRET
+        sync: false
+      - key: ADMIN_USER
+        sync: false
+      - key: ADMIN_PASSWORD
         sync: false
 
 databases:
