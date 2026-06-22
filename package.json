@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "seed": "node seed/bouquets.js"
+    "seed": "node seed/bouquets.js",
+    "seed:orders": "node seed/orders.js"
   },
   "engines": {
     "node": ">=20"
