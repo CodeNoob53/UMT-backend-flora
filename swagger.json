@@ -21,7 +21,8 @@
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BouquetCreate" } } } },
         "responses": {
           "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bouquet" } } } },
-          "400": { "description": "Validation error" }
+          "400": { "description": "Validation error" },
+          "401": { "description": "Authentication required" }
         }
       }
     },
@@ -43,6 +44,7 @@
         "responses": {
           "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bouquet" } } } },
           "400": { "description": "Empty body" },
+          "401": { "description": "Authentication required" },
           "404": { "description": "Not found" }
         }
       },
@@ -52,6 +54,7 @@
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
         "responses": {
           "200": { "description": "Deleted" },
+          "401": { "description": "Authentication required" },
           "404": { "description": "Not found" }
         }
       }
@@ -63,6 +66,7 @@
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
         "responses": {
           "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bouquet" } } } },
+          "401": { "description": "Authentication required" },
           "404": { "description": "Not found" }
         }
       }
@@ -79,6 +83,7 @@
         "responses": {
           "200": { "description": "Photo updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Bouquet" } } } },
           "400": { "description": "No file or invalid format" },
+          "401": { "description": "Authentication required" },
           "404": { "description": "Not found" }
         }
       }
