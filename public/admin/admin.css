@@ -522,11 +522,75 @@ textarea {
   font-size: 12px;
 }
 
+.upload-progress {
+  padding: 14px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--panel-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 8px;
+}
+
+.upload-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.upload-progress-head strong {
+  font-size: 14px;
+}
+
+.upload-progress-head span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.progress-track {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel));
+  border-radius: 999px;
+}
+
+.progress-bar {
+  position: absolute;
+  inset-block: 0;
+  left: -42%;
+  width: 42%;
+  background: var(--accent);
+  border-radius: inherit;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+.upload-progress-text {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.upload-progress--standalone {
+  margin-top: 6px;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 6px;
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(340%);
+  }
 }
 
 @media (max-width: 860px) {

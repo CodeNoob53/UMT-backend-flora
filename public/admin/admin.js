@@ -5,6 +5,8 @@ let bouquets = [];
 let deleteTarget = null;
 let isLoading = false;
 let activeRequest = false;
+let uploadStartedAt = 0;
+let uploadTimerId = null;
 
 const state = {
   query: '',
@@ -27,6 +29,14 @@ const totalCount = document.getElementById('stat-total');
 const bestsellerCount = document.getElementById('stat-bestsellers');
 const favoriteCount = document.getElementById('stat-favorites');
 const noPhotoCount = document.getElementById('stat-no-photo');
+const uploadProgress = document.getElementById('upload-progress');
+const uploadProgressTitle = document.getElementById('upload-progress-title');
+const uploadProgressTime = document.getElementById('upload-progress-time');
+const uploadProgressText = document.getElementById('upload-progress-text');
+const uploadOverlay = document.getElementById('upload-overlay');
+const uploadOverlayProgressTitle = document.getElementById('upload-overlay-progress-title');
+const uploadOverlayProgressTime = document.getElementById('upload-overlay-progress-time');
+const uploadOverlayProgressText = document.getElementById('upload-overlay-progress-text');
 
 function setBusy(isBusy, message = '') {
   activeRequest = isBusy;
@@ -37,6 +47,44 @@ function setBusy(isBusy, message = '') {
   });
 
   if (message) setTableStatus(message);
+}
+
+function setUploadProgress(isVisible, title = 'Processing photo') {
+  const useOverlay = modalOverlay.classList.contains('hidden');
+  uploadProgress.hidden = !isVisible;
+  uploadOverlay.classList.toggle('hidden', !isVisible || !useOverlay);
+
+  if (!isVisible) {
+    window.clearInterval(uploadTimerId);
+    uploadTimerId = null;
+    uploadStartedAt = 0;
+    uploadProgressTime.textContent = '0s';
+    uploadOverlayProgressTime.textContent = '0s';
+    return;
+  }
+
+  uploadStartedAt = Date.now();
+  uploadProgressTitle.textContent = title;
+  uploadOverlayProgressTitle.textContent = title;
+  uploadProgressText.textContent =
+    'The backend is generating AVIF sizes, creating a JPEG fallback, and uploading everything to Cloudinary. Please keep this window open.';
+  uploadOverlayProgressText.textContent = uploadProgressText.textContent;
+
+  const updateElapsed = () => {
+    const elapsed = Math.max(0, Math.round((Date.now() - uploadStartedAt) / 1000));
+    uploadProgressTime.textContent = `${elapsed}s`;
+    uploadOverlayProgressTime.textContent = `${elapsed}s`;
+
+    if (elapsed >= 20) {
+      uploadProgressText.textContent =
+        'Still working. Large images and Render free tier can take a while, but the upload is still in progress.';
+      uploadOverlayProgressText.textContent = uploadProgressText.textContent;
+    }
+  };
+
+  updateElapsed();
+  window.clearInterval(uploadTimerId);
+  uploadTimerId = window.setInterval(updateElapsed, 1000);
 }
 
 function escapeHtml(value) {
@@ -220,6 +268,10 @@ function openModal(bouquet = null) {
 }
 
 function closeModal() {
+  if (activeRequest) {
+    showToast('Please wait until the current operation finishes.', 'error');
+    return;
+  }
   modalOverlay.classList.add('hidden');
 }
 
@@ -241,6 +293,7 @@ function openPhotoUpload(id) {
 
     try {
       setBusy(true, 'Uploading and processing photo. Please wait...');
+      setUploadProgress(true, 'Uploading photo');
       showToast('Uploading and processing photo...');
       const updated = await apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
       bouquets = bouquets.map(b => b.id === updated.id ? updated : b);
@@ -249,6 +302,7 @@ function openPhotoUpload(id) {
     } catch (error) {
       showToast(error.message, 'error');
     } finally {
+      setUploadProgress(false);
       setBusy(false);
       renderTable();
     }
@@ -264,6 +318,7 @@ async function uploadSelectedPhoto(id) {
   fd.append('photo', photoFile);
 
   setTableStatus('Uploading and processing photo. Please wait...');
+  setUploadProgress(true, 'Processing selected photo');
   return apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
 }
 
@@ -294,6 +349,8 @@ form.addEventListener('submit', async event => {
   setBusy(true, isNew ? 'Creating bouquet...' : 'Saving bouquet...');
 
   try {
+    const hasSelectedPhoto = Boolean(document.getElementById('field-photo').files[0]);
+
     if (isNew) {
       const created = await apiFetch(API, {
         method: 'POST',
@@ -307,7 +364,7 @@ form.addEventListener('submit', async event => {
       } else {
         bouquets = [created, ...bouquets];
       }
-      showToast('Bouquet created');
+      showToast(hasSelectedPhoto ? 'Bouquet created with photo' : 'Bouquet created');
     } else {
       let updated = await apiFetch(`${API}/${id}`, {
         method: 'PUT',
@@ -319,14 +376,17 @@ form.addEventListener('submit', async event => {
       if (withPhoto) updated = withPhoto;
 
       bouquets = bouquets.map(b => b.id === updated.id ? updated : b);
-      showToast('Bouquet updated');
+      showToast(hasSelectedPhoto ? 'Bouquet and photo updated' : 'Bouquet updated');
     }
 
+    setUploadProgress(false);
+    setBusy(false);
     closeModal();
     renderTable();
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
+    setUploadProgress(false);
     submitButton.textContent = 'Save';
     setBusy(false);
     renderTable();
@@ -400,11 +460,16 @@ document.getElementById('btn-delete-cancel').addEventListener('click', () => {
 });
 
 modalOverlay.addEventListener('click', event => {
+  if (activeRequest) return;
   if (event.target === modalOverlay) closeModal();
 });
 
 window.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
+  if (activeRequest) {
+    showToast('Please wait until the current operation finishes.', 'error');
+    return;
+  }
   closeModal();
   deleteOverlay.classList.add('hidden');
 });

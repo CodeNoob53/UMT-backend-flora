@@ -153,6 +153,19 @@
             <span class="form-hint">JPEG, PNG or WebP. The backend generates AVIF sizes and a JPEG fallback.</span>
           </label>
 
+          <div class="upload-progress" id="upload-progress" hidden role="status" aria-live="polite">
+            <div class="upload-progress-head">
+              <strong id="upload-progress-title">Processing photo</strong>
+              <span id="upload-progress-time">0s</span>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <span class="progress-bar"></span>
+            </div>
+            <p class="upload-progress-text" id="upload-progress-text">
+              The backend is generating AVIF sizes, creating a JPEG fallback, and uploading everything to Cloudinary. Please keep this window open.
+            </p>
+          </div>
+
           <div class="form-actions">
             <button class="btn btn--outline" type="button" id="btn-cancel">Cancel</button>
             <button class="btn btn--primary" type="submit" id="btn-submit">Save</button>
@@ -168,6 +181,24 @@
         <div class="form-actions">
           <button class="btn btn--outline" id="btn-delete-cancel" type="button">Cancel</button>
           <button class="btn btn--danger" id="btn-delete-confirm" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="upload-overlay">
+      <div class="modal modal--sm" role="dialog" aria-modal="true" aria-labelledby="upload-overlay-title">
+        <h2 class="modal-title" id="upload-overlay-title">Processing photo</h2>
+        <div class="upload-progress upload-progress--standalone" role="status" aria-live="polite">
+          <div class="upload-progress-head">
+            <strong id="upload-overlay-progress-title">Uploading photo</strong>
+            <span id="upload-overlay-progress-time">0s</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <span class="progress-bar"></span>
+          </div>
+          <p class="upload-progress-text" id="upload-overlay-progress-text">
+            The backend is generating AVIF sizes, creating a JPEG fallback, and uploading everything to Cloudinary. Please keep this window open.
+          </p>
         </div>
       </div>
     </div>
