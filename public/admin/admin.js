@@ -1,7 +1,9 @@
-const API = '/api/bouquets';
+const BOUQUETS_API = '/api/bouquets';
+const ORDERS_API = '/api/orders';
 const THEME_KEY = 'flora-admin-theme';
 
 let bouquets = [];
+let orders = [];
 let deleteTarget = null;
 let isLoading = false;
 let activeRequest = false;
@@ -15,6 +17,7 @@ const state = {
 };
 
 const tbody = document.getElementById('bouquets-tbody');
+const ordersTbody = document.getElementById('orders-tbody');
 const modalOverlay = document.getElementById('modal-overlay');
 const deleteOverlay = document.getElementById('delete-overlay');
 const form = document.getElementById('bouquet-form');
@@ -24,11 +27,13 @@ const searchInput = document.getElementById('search-input');
 const filterSelect = document.getElementById('filter-select');
 const sortSelect = document.getElementById('sort-select');
 const tableStatus = document.getElementById('table-status');
+const ordersStatus = document.getElementById('orders-status');
 const themeToggle = document.getElementById('theme-toggle');
 const totalCount = document.getElementById('stat-total');
 const bestsellerCount = document.getElementById('stat-bestsellers');
 const favoriteCount = document.getElementById('stat-favorites');
 const noPhotoCount = document.getElementById('stat-no-photo');
+const newOrdersCount = document.getElementById('stat-new-orders');
 const uploadProgress = document.getElementById('upload-progress');
 const uploadProgressTitle = document.getElementById('upload-progress-title');
 const uploadProgressTime = document.getElementById('upload-progress-time');
@@ -166,12 +171,68 @@ function updateStats() {
   bestsellerCount.textContent = bouquets.filter(b => b.bestseller).length;
   favoriteCount.textContent = bouquets.filter(b => b.favorite).length;
   noPhotoCount.textContent = bouquets.filter(b => !b.photoURL).length;
+  newOrdersCount.textContent = orders.filter(order => order.status === 'new').length;
 }
 
 function setTableStatus(message, type = 'muted') {
   tableStatus.textContent = message;
   tableStatus.dataset.type = type;
   tableStatus.hidden = !message;
+}
+
+function setOrdersStatus(message, type = 'muted') {
+  ordersStatus.textContent = message;
+  ordersStatus.dataset.type = type;
+  ordersStatus.hidden = !message;
+}
+
+function formatDate(value) {
+  if (!value) return 'Unknown';
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function formatOrderProduct(order) {
+  const title = order.productTitle || (order.productId ? `Product #${order.productId}` : 'Not selected');
+  const quantity = Number(order.quantity ?? 1);
+  const price = order.productPrice ? `$${Number(order.productPrice).toLocaleString('en-US')}` : '';
+  return `${title}${quantity > 1 ? ` x${quantity}` : ''}${price ? ` (${price})` : ''}`;
+}
+
+function renderOrders() {
+  updateStats();
+
+  if (orders.length === 0) {
+    setOrdersStatus('No orders yet.');
+    ordersTbody.innerHTML = '';
+    return;
+  }
+
+  setOrdersStatus('');
+  ordersTbody.innerHTML = orders.map(order => `
+    <tr data-id="${order.id}">
+      <td>
+        <strong>${escapeHtml(order.name)}</strong>
+        <span class="table-subtext">${escapeHtml(order.phone)}</span>
+        <span class="table-subtext">${escapeHtml(order.address || 'No address')}</span>
+      </td>
+      <td>${escapeHtml(formatOrderProduct(order))}</td>
+      <td class="cell-message">${escapeHtml(order.message || 'No message')}</td>
+      <td>
+        <select class="select select--compact order-status-select" data-order-action="status" ${activeRequest ? 'disabled' : ''}>
+          <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
+          <option value="processed" ${order.status === 'processed' ? 'selected' : ''}>Processed</option>
+          <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+        </select>
+      </td>
+      <td>${escapeHtml(formatDate(order.createdAt))}</td>
+      <td>
+        <button class="btn btn--icon btn--danger" data-order-action="delete" ${activeRequest ? 'disabled' : ''}>Delete</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function renderTable() {
@@ -235,14 +296,24 @@ async function loadBouquets() {
   renderTable();
 
   try {
-    bouquets = await apiFetch(API);
+    bouquets = await apiFetch(BOUQUETS_API);
     renderTable();
   } catch (error) {
     setTableStatus(error.message, 'error');
     showToast(error.message, 'error');
   } finally {
     isLoading = false;
-    renderTable();
+      renderTable();
+    }
+}
+
+async function loadOrders() {
+  try {
+    orders = await apiFetch(ORDERS_API);
+    renderOrders();
+  } catch (error) {
+    setOrdersStatus(error.message, 'error');
+    showToast(error.message, 'error');
   }
 }
 
@@ -296,7 +367,7 @@ function openPhotoUpload(id) {
       setBusy(true, 'Uploading and processing photo. Please wait...');
       setUploadProgress(true, 'Uploading photo');
       showToast('Uploading and processing photo...');
-      const updated = await apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
+      const updated = await apiFetch(`${BOUQUETS_API}/${id}/photo`, { method: 'PATCH', body: fd });
       bouquets = bouquets.map(b => b.id === updated.id ? updated : b);
       renderTable();
       showToast('Photo updated');
@@ -320,7 +391,7 @@ async function uploadSelectedPhoto(id) {
 
   setTableStatus('Uploading and processing photo. Please wait...');
   setUploadProgress(true, 'Processing selected photo');
-  return apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
+  return apiFetch(`${BOUQUETS_API}/${id}/photo`, { method: 'PATCH', body: fd });
 }
 
 form.addEventListener('submit', async event => {
@@ -353,7 +424,7 @@ form.addEventListener('submit', async event => {
     const hasSelectedPhoto = Boolean(document.getElementById('field-photo').files[0]);
 
     if (isNew) {
-      const created = await apiFetch(API, {
+      const created = await apiFetch(BOUQUETS_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -367,7 +438,7 @@ form.addEventListener('submit', async event => {
       }
       showToast(hasSelectedPhoto ? 'Bouquet created with photo' : 'Bouquet created');
     } else {
-      let updated = await apiFetch(`${API}/${id}`, {
+      let updated = await apiFetch(`${BOUQUETS_API}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -410,7 +481,7 @@ document.getElementById('btn-delete-confirm').addEventListener('click', async ()
 
   try {
     setBusy(true, 'Deleting bouquet...');
-    await apiFetch(`${API}/${deleteTarget}`, { method: 'DELETE' });
+    await apiFetch(`${BOUQUETS_API}/${deleteTarget}`, { method: 'DELETE' });
     bouquets = bouquets.filter(b => b.id !== deleteTarget);
     renderTable();
     showToast('Bouquet deleted');
@@ -436,6 +507,51 @@ tbody.addEventListener('click', event => {
   if (action === 'photo') openPhotoUpload(id);
 });
 
+ordersTbody.addEventListener('change', async event => {
+  const select = event.target.closest('[data-order-action="status"]');
+  if (!select || activeRequest) return;
+
+  const id = Number(select.closest('tr').dataset.id);
+
+  try {
+    setBusy(true, 'Updating order status...');
+    const updated = await apiFetch(`${ORDERS_API}/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: select.value }),
+    });
+    orders = orders.map(order => order.id === updated.id ? updated : order);
+    renderOrders();
+    showToast('Order status updated');
+  } catch (error) {
+    showToast(error.message, 'error');
+    renderOrders();
+  } finally {
+    setBusy(false);
+    renderOrders();
+  }
+});
+
+ordersTbody.addEventListener('click', async event => {
+  const button = event.target.closest('[data-order-action="delete"]');
+  if (!button || activeRequest) return;
+
+  const id = Number(button.closest('tr').dataset.id);
+
+  try {
+    setBusy(true, 'Deleting order...');
+    await apiFetch(`${ORDERS_API}/${id}`, { method: 'DELETE' });
+    orders = orders.filter(order => order.id !== id);
+    renderOrders();
+    showToast('Order deleted');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    setBusy(false);
+    renderOrders();
+  }
+});
+
 searchInput.addEventListener('input', event => {
   state.query = event.target.value;
   renderTable();
@@ -451,7 +567,11 @@ sortSelect.addEventListener('change', event => {
   renderTable();
 });
 
-document.getElementById('btn-refresh').addEventListener('click', loadBouquets);
+document.getElementById('btn-refresh').addEventListener('click', () => {
+  loadBouquets();
+  loadOrders();
+});
+document.getElementById('btn-refresh-orders').addEventListener('click', loadOrders);
 document.getElementById('btn-add').addEventListener('click', () => openModal());
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
@@ -477,3 +597,4 @@ window.addEventListener('keydown', event => {
 
 initTheme();
 loadBouquets();
+loadOrders();

@@ -153,7 +153,7 @@ textarea {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 16px;
 }
@@ -188,6 +188,25 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow);
+}
+
+.panel--spaced {
+  margin-top: 18px;
+}
+
+.section-head {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-title {
+  margin: 2px 0 0;
+  font-size: 20px;
+  line-height: 1.2;
 }
 
 .toolbar {
@@ -264,6 +283,10 @@ textarea {
   border-collapse: collapse;
 }
 
+.table--orders {
+  min-width: 980px;
+}
+
 .table th,
 .table td {
   padding: 12px 16px;
@@ -294,6 +317,12 @@ textarea {
   margin-top: 3px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.cell-message {
+  max-width: 300px;
+  color: var(--muted);
+  white-space: normal;
 }
 
 .thumb,

@@ -48,6 +48,10 @@
         <span class="stat-label">No photo</span>
         <strong class="stat-value" id="stat-no-photo">0</strong>
       </article>
+      <article class="stat-card">
+        <span class="stat-label">New orders</span>
+        <strong class="stat-value" id="stat-new-orders">0</strong>
+      </article>
     </section>
 
     <section class="panel" id="section-list">
@@ -95,6 +99,34 @@
             </tr>
           </thead>
           <tbody id="bouquets-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel panel--spaced" id="section-orders">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Requests</span>
+          <h2 class="section-title">Orders</h2>
+        </div>
+        <button class="btn btn--outline" id="btn-refresh-orders" type="button">Refresh orders</button>
+      </div>
+
+      <p class="table-status" id="orders-status" hidden></p>
+
+      <div class="table-wrap">
+        <table class="table table--orders">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Product</th>
+              <th>Message</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody"></tbody>
         </table>
       </div>
     </section>
