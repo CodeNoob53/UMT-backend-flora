@@ -37,19 +37,21 @@ Optional seed command:
 
 ```bash
 npm run seed
+npm run seed:orders
 ```
 
-The seed script imports initial bouquet data from the neighboring frontend project (`../1_hw_flora/db.json`) in this local workspace.
+The bouquet seed script imports initial bouquet data from the neighboring frontend project (`../1_hw_flora/db.json`) in this local workspace. The orders seed script creates a small set of demo order requests and links them to existing bouquets when bouquets are present in the database.
 
 ## Available URLs
 
 - Health check: `/health`
 - API root: `/api`
 - Bouquets API: `/api/bouquets`
+- Orders API: `/api/orders`
 - Swagger UI: `/api-docs`
 - Admin panel: `/admin`
 
-The admin panel is protected with Basic Auth. Mutating API routes are protected as well: `POST`, `PUT`, `DELETE`, `PATCH /favorite`, and `PATCH /photo`.
+The admin panel is protected with Basic Auth. Bouquet mutating routes are protected as well: `POST`, `PUT`, `DELETE`, `PATCH /favorite`, and `PATCH /photo`. Orders can be created publicly from the frontend, while reading, changing status, and deleting orders are protected for the admin panel.
 
 ## Bouquets API
 
@@ -62,6 +64,20 @@ The admin panel is protected with Basic Auth. Mutating API routes are protected 
 | DELETE | `/api/bouquets/:id` | Delete bouquet |
 | PATCH | `/api/bouquets/:id/favorite` | Toggle favorite status |
 | PATCH | `/api/bouquets/:id/photo` | Upload bouquet photo |
+
+## Orders API
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/api/orders` | Get all orders for admin |
+| GET | `/api/orders/:id` | Get one order by id |
+| POST | `/api/orders` | Create order request from frontend |
+| PATCH | `/api/orders/:id/status` | Update order status |
+| DELETE | `/api/orders/:id` | Soft delete order |
+
+When an order is created with `productId`, the backend also increments the matching bouquet's `orders` counter by the submitted `quantity`.
+
+Orders use Sequelize timestamps: `createdAt`, `updatedAt`, and soft-delete `deletedAt`.
 
 ## Image Uploads
 

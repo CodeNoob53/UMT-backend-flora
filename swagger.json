@@ -87,6 +87,61 @@
           "404": { "description": "Not found" }
         }
       }
+    },
+    "/orders": {
+      "get": {
+        "summary": "Get all orders",
+        "tags": ["Orders"],
+        "responses": {
+          "200": { "description": "List of orders", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } } } } },
+          "401": { "description": "Authentication required" }
+        }
+      },
+      "post": {
+        "summary": "Create order request",
+        "tags": ["Orders"],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderCreate" } } } },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "400": { "description": "Validation error" }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "summary": "Get order by id",
+        "tags": ["Orders"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Order", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "401": { "description": "Authentication required" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "delete": {
+        "summary": "Soft delete order",
+        "tags": ["Orders"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Deleted" },
+          "401": { "description": "Authentication required" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/orders/{id}/status": {
+      "patch": {
+        "summary": "Update order status",
+        "tags": ["Orders"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderStatus" } } } },
+        "responses": {
+          "200": { "description": "Updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "400": { "description": "Validation error" },
+          "401": { "description": "Authentication required" },
+          "404": { "description": "Not found" }
+        }
+      }
     }
   },
   "components": {
@@ -106,6 +161,45 @@
           "category": { "type": "string" },
           "slug": { "type": "string" },
           "alt": { "type": "string" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "message": { "type": "string" },
+          "quantity": { "type": "integer" },
+          "productId": { "type": "integer" },
+          "productTitle": { "type": "string" },
+          "productPrice": { "type": "integer" },
+          "status": { "type": "string", "enum": ["new", "processed", "cancelled"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "deletedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "OrderCreate": {
+        "type": "object",
+        "required": ["name", "phone"],
+        "properties": {
+          "name": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "message": { "type": "string" },
+          "quantity": { "type": "integer", "default": 1 },
+          "productId": { "type": "integer" },
+          "productTitle": { "type": "string" },
+          "productPrice": { "type": "integer" }
+        }
+      },
+      "OrderStatus": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["new", "processed", "cancelled"] }
         }
       },
       "BouquetCreate": {
