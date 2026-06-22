@@ -202,7 +202,7 @@ function openModal(bouquet = null) {
     document.getElementById('field-favorite').checked = bouquet.favorite ?? false;
   }
 
-  document.getElementById('photo-row').hidden = Boolean(bouquet);
+  document.getElementById('photo-row').hidden = false;
   modalOverlay.classList.remove('hidden');
   document.getElementById('field-title').focus();
 }
@@ -235,6 +235,15 @@ function openPhotoUpload(id) {
   input.click();
 }
 
+async function uploadSelectedPhoto(id) {
+  const photoFile = document.getElementById('field-photo').files[0];
+  if (!photoFile) return null;
+
+  const fd = new FormData();
+  fd.append('photo', photoFile);
+  return apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
+}
+
 form.addEventListener('submit', async event => {
   event.preventDefault();
 
@@ -265,22 +274,23 @@ form.addEventListener('submit', async event => {
         body: JSON.stringify(body),
       });
 
-      const photoFile = document.getElementById('field-photo').files[0];
-      if (photoFile) {
-        const fd = new FormData();
-        fd.append('photo', photoFile);
-        const withPhoto = await apiFetch(`${API}/${created.id}/photo`, { method: 'PATCH', body: fd });
+      const withPhoto = await uploadSelectedPhoto(created.id);
+      if (withPhoto) {
         bouquets = [withPhoto, ...bouquets];
       } else {
         bouquets = [created, ...bouquets];
       }
       showToast('Bouquet created');
     } else {
-      const updated = await apiFetch(`${API}/${id}`, {
+      let updated = await apiFetch(`${API}/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
+
+      const withPhoto = await uploadSelectedPhoto(id);
+      if (withPhoto) updated = withPhoto;
+
       bouquets = bouquets.map(b => b.id === updated.id ? updated : b);
       showToast('Bouquet updated');
     }
