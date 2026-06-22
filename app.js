@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { createRequire } from 'module';
 import swaggerUi from 'swagger-ui-express';
 import apiRouter from './routes/api/index.js';
+import { basicAuth } from './middlewares/basicAuth.js';
 import { notFound } from './middlewares/notFound.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
@@ -14,6 +15,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use('/admin', basicAuth, express.static('public/admin'));
 app.use(express.static('public'));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

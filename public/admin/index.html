@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flora Admin</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <span class="logo">🌸 Flora Admin</span>
+      <button class="btn btn--outline" id="btn-add">+ Add Bouquet</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="toast" id="toast"></div>
+
+    <!-- Bouquet list -->
+    <section class="section" id="section-list">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Title</th>
+              <th>Price</th>
+              <th>Orders</th>
+              <th>Bestseller</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bouquets-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Form modal -->
+    <div class="modal-overlay hidden" id="modal-overlay">
+      <div class="modal">
+        <button class="modal-close" id="modal-close">✕</button>
+        <h2 class="modal-title" id="modal-title">Add Bouquet</h2>
+        <form class="form" id="bouquet-form">
+          <input type="hidden" id="field-id">
+          <div class="form-row">
+            <label class="form-label">Title *</label>
+            <input class="form-input" type="text" id="field-title" required>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Price *</label>
+            <input class="form-input" type="number" id="field-price" min="1" required>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Slug</label>
+            <input class="form-input" type="text" id="field-slug">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Short text</label>
+            <input class="form-input" type="text" id="field-text">
+          </div>
+          <div class="form-row">
+            <label class="form-label">Description</label>
+            <textarea class="form-input form-textarea" id="field-description"></textarea>
+          </div>
+          <div class="form-row">
+            <label class="form-label">Alt text</label>
+            <input class="form-input" type="text" id="field-alt">
+          </div>
+          <div class="form-row form-row--check">
+            <label class="form-check">
+              <input type="checkbox" id="field-bestseller"> Bestseller
+            </label>
+            <label class="form-check">
+              <input type="checkbox" id="field-favorite"> Favorite
+            </label>
+          </div>
+          <div class="form-row" id="photo-row">
+            <label class="form-label">Photo</label>
+            <input class="form-input" type="file" id="field-photo" accept="image/jpeg,image/png,image/webp">
+            <p class="form-hint">JPEG / PNG / WebP — Sharp generates AVIF retina set + mozjpeg fallback</p>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn--outline" type="button" id="btn-cancel">Cancel</button>
+            <button class="btn btn--primary" type="submit" id="btn-submit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete confirm -->
+    <div class="modal-overlay hidden" id="delete-overlay">
+      <div class="modal modal--sm">
+        <h2 class="modal-title">Delete bouquet?</h2>
+        <p class="modal-text" id="delete-name"></p>
+        <div class="form-actions">
+          <button class="btn btn--outline" id="btn-delete-cancel">Cancel</button>
+          <button class="btn btn--danger" id="btn-delete-confirm">Delete</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
