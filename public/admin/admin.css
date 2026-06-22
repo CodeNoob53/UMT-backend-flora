@@ -83,6 +83,10 @@ body {
   font-size: 14px;
 }
 
+body.is-busy {
+  cursor: progress;
+}
+
 button,
 input,
 select,

@@ -4,6 +4,7 @@ const THEME_KEY = 'flora-admin-theme';
 let bouquets = [];
 let deleteTarget = null;
 let isLoading = false;
+let activeRequest = false;
 
 const state = {
   query: '',
@@ -26,6 +27,17 @@ const totalCount = document.getElementById('stat-total');
 const bestsellerCount = document.getElementById('stat-bestsellers');
 const favoriteCount = document.getElementById('stat-favorites');
 const noPhotoCount = document.getElementById('stat-no-photo');
+
+function setBusy(isBusy, message = '') {
+  activeRequest = isBusy;
+  document.body.classList.toggle('is-busy', isBusy);
+  document.querySelectorAll('button, input, select, textarea').forEach(control => {
+    if (control.id === 'theme-toggle') return;
+    control.disabled = isBusy;
+  });
+
+  if (message) setTableStatus(message);
+}
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -159,9 +171,9 @@ function renderTable() {
         </td>
         <td>
           <div class="actions">
-            <button class="btn btn--icon btn--outline" data-action="photo" title="Upload photo" aria-label="Upload photo">Photo</button>
-            <button class="btn btn--icon btn--outline" data-action="edit" title="Edit" aria-label="Edit">Edit</button>
-            <button class="btn btn--icon btn--danger" data-action="delete" title="Delete" aria-label="Delete">Delete</button>
+            <button class="btn btn--icon btn--outline" data-action="photo" title="Upload photo" aria-label="Upload photo" ${activeRequest ? 'disabled' : ''}>Photo</button>
+            <button class="btn btn--icon btn--outline" data-action="edit" title="Edit" aria-label="Edit" ${activeRequest ? 'disabled' : ''}>Edit</button>
+            <button class="btn btn--icon btn--danger" data-action="delete" title="Delete" aria-label="Delete" ${activeRequest ? 'disabled' : ''}>Delete</button>
           </div>
         </td>
       </tr>
@@ -212,6 +224,11 @@ function closeModal() {
 }
 
 function openPhotoUpload(id) {
+  if (activeRequest) {
+    showToast('Please wait until the current upload finishes.', 'error');
+    return;
+  }
+
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = 'image/jpeg,image/png,image/webp';
@@ -223,6 +240,7 @@ function openPhotoUpload(id) {
     fd.append('photo', file);
 
     try {
+      setBusy(true, 'Uploading and processing photo. Please wait...');
       showToast('Uploading and processing photo...');
       const updated = await apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
       bouquets = bouquets.map(b => b.id === updated.id ? updated : b);
@@ -230,6 +248,9 @@ function openPhotoUpload(id) {
       showToast('Photo updated');
     } catch (error) {
       showToast(error.message, 'error');
+    } finally {
+      setBusy(false);
+      renderTable();
     }
   };
   input.click();
@@ -241,11 +262,17 @@ async function uploadSelectedPhoto(id) {
 
   const fd = new FormData();
   fd.append('photo', photoFile);
+
+  setTableStatus('Uploading and processing photo. Please wait...');
   return apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
 }
 
 form.addEventListener('submit', async event => {
   event.preventDefault();
+  if (activeRequest) {
+    showToast('Please wait until the current operation finishes.', 'error');
+    return;
+  }
 
   const id = document.getElementById('field-id').value;
   const isNew = !id;
@@ -263,8 +290,8 @@ form.addEventListener('submit', async event => {
     favorite: document.getElementById('field-favorite').checked,
   };
 
-  submitButton.disabled = true;
   submitButton.textContent = isNew ? 'Creating...' : 'Saving...';
+  setBusy(true, isNew ? 'Creating bouquet...' : 'Saving bouquet...');
 
   try {
     if (isNew) {
@@ -300,8 +327,9 @@ form.addEventListener('submit', async event => {
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
-    submitButton.disabled = false;
     submitButton.textContent = 'Save';
+    setBusy(false);
+    renderTable();
   }
 });
 
@@ -314,8 +342,13 @@ function openDeleteConfirm(id) {
 
 document.getElementById('btn-delete-confirm').addEventListener('click', async () => {
   if (!deleteTarget) return;
+  if (activeRequest) {
+    showToast('Please wait until the current operation finishes.', 'error');
+    return;
+  }
 
   try {
+    setBusy(true, 'Deleting bouquet...');
     await apiFetch(`${API}/${deleteTarget}`, { method: 'DELETE' });
     bouquets = bouquets.filter(b => b.id !== deleteTarget);
     renderTable();
@@ -323,8 +356,10 @@ document.getElementById('btn-delete-confirm').addEventListener('click', async ()
   } catch (error) {
     showToast(error.message, 'error');
   } finally {
+    setBusy(false);
     deleteOverlay.classList.add('hidden');
     deleteTarget = null;
+    renderTable();
   }
 });
 
