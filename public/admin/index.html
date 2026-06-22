@@ -9,16 +9,78 @@
 <body>
   <header class="header">
     <div class="header-inner">
-      <span class="logo">🌸 Flora Admin</span>
-      <button class="btn btn--outline" id="btn-add">+ Add Bouquet</button>
+      <div>
+        <span class="eyebrow">Catalog manager</span>
+        <h1 class="logo">Flora Admin</h1>
+      </div>
+      <div class="header-actions">
+        <label class="theme-control">
+          <span>Theme</span>
+          <select id="theme-toggle" class="select select--compact" aria-label="Theme">
+            <option value="auto">System</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
+        <button class="btn btn--outline" id="btn-refresh" type="button">Refresh</button>
+        <button class="btn btn--primary" id="btn-add" type="button">Add bouquet</button>
+      </div>
     </div>
   </header>
 
   <main class="main">
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <!-- Bouquet list -->
-    <section class="section" id="section-list">
+    <section class="stats-grid" aria-label="Catalog summary">
+      <article class="stat-card">
+        <span class="stat-label">Total</span>
+        <strong class="stat-value" id="stat-total">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Bestsellers</span>
+        <strong class="stat-value" id="stat-bestsellers">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">Favorites</span>
+        <strong class="stat-value" id="stat-favorites">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">No photo</span>
+        <strong class="stat-value" id="stat-no-photo">0</strong>
+      </article>
+    </section>
+
+    <section class="panel" id="section-list">
+      <div class="toolbar">
+        <label class="field field--search">
+          <span class="field-label">Search</span>
+          <input class="input" type="search" id="search-input" placeholder="Title, slug, category..." autocomplete="off">
+        </label>
+
+        <label class="field">
+          <span class="field-label">Filter</span>
+          <select class="select" id="filter-select">
+            <option value="all">All bouquets</option>
+            <option value="bestseller">Bestsellers</option>
+            <option value="favorite">Favorites</option>
+            <option value="no-photo">Without photo</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Sort</span>
+          <select class="select" id="sort-select">
+            <option value="newest">Newest first</option>
+            <option value="title">Title A-Z</option>
+            <option value="price-low">Price low-high</option>
+            <option value="price-high">Price high-low</option>
+            <option value="orders">Orders high-low</option>
+          </select>
+        </label>
+      </div>
+
+      <p class="table-status" id="table-status" hidden></p>
+
       <div class="table-wrap">
         <table class="table">
           <thead>
@@ -28,6 +90,7 @@
               <th>Price</th>
               <th>Orders</th>
               <th>Bestseller</th>
+              <th>Favorite</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -36,37 +99,45 @@
       </div>
     </section>
 
-    <!-- Form modal -->
     <div class="modal-overlay hidden" id="modal-overlay">
-      <div class="modal">
-        <button class="modal-close" id="modal-close">✕</button>
-        <h2 class="modal-title" id="modal-title">Add Bouquet</h2>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button class="modal-close" id="modal-close" type="button" aria-label="Close">x</button>
+        <h2 class="modal-title" id="modal-title">Add bouquet</h2>
         <form class="form" id="bouquet-form">
           <input type="hidden" id="field-id">
-          <div class="form-row">
-            <label class="form-label">Title *</label>
-            <input class="form-input" type="text" id="field-title" required>
+
+          <div class="form-grid">
+            <label class="form-row">
+              <span class="form-label">Title *</span>
+              <input class="form-input" type="text" id="field-title" required>
+            </label>
+            <label class="form-row">
+              <span class="form-label">Price *</span>
+              <input class="form-input" type="number" id="field-price" min="1" required>
+            </label>
+            <label class="form-row">
+              <span class="form-label">Slug</span>
+              <input class="form-input" type="text" id="field-slug">
+            </label>
+            <label class="form-row">
+              <span class="form-label">Orders</span>
+              <input class="form-input" type="number" id="field-orders" min="0" value="0">
+            </label>
           </div>
-          <div class="form-row">
-            <label class="form-label">Price *</label>
-            <input class="form-input" type="number" id="field-price" min="1" required>
-          </div>
-          <div class="form-row">
-            <label class="form-label">Slug</label>
-            <input class="form-input" type="text" id="field-slug">
-          </div>
-          <div class="form-row">
-            <label class="form-label">Short text</label>
+
+          <label class="form-row">
+            <span class="form-label">Short text</span>
             <input class="form-input" type="text" id="field-text">
-          </div>
-          <div class="form-row">
-            <label class="form-label">Description</label>
+          </label>
+          <label class="form-row">
+            <span class="form-label">Description</span>
             <textarea class="form-input form-textarea" id="field-description"></textarea>
-          </div>
-          <div class="form-row">
-            <label class="form-label">Alt text</label>
+          </label>
+          <label class="form-row">
+            <span class="form-label">Alt text</span>
             <input class="form-input" type="text" id="field-alt">
-          </div>
+          </label>
+
           <div class="form-row form-row--check">
             <label class="form-check">
               <input type="checkbox" id="field-bestseller"> Bestseller
@@ -75,11 +146,13 @@
               <input type="checkbox" id="field-favorite"> Favorite
             </label>
           </div>
-          <div class="form-row" id="photo-row">
-            <label class="form-label">Photo</label>
+
+          <label class="form-row" id="photo-row">
+            <span class="form-label">Photo</span>
             <input class="form-input" type="file" id="field-photo" accept="image/jpeg,image/png,image/webp">
-            <p class="form-hint">JPEG / PNG / WebP — Sharp generates AVIF retina set + mozjpeg fallback</p>
-          </div>
+            <span class="form-hint">JPEG, PNG or WebP. The backend generates AVIF sizes and a JPEG fallback.</span>
+          </label>
+
           <div class="form-actions">
             <button class="btn btn--outline" type="button" id="btn-cancel">Cancel</button>
             <button class="btn btn--primary" type="submit" id="btn-submit">Save</button>
@@ -88,14 +161,13 @@
       </div>
     </div>
 
-    <!-- Delete confirm -->
     <div class="modal-overlay hidden" id="delete-overlay">
-      <div class="modal modal--sm">
-        <h2 class="modal-title">Delete bouquet?</h2>
+      <div class="modal modal--sm" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+        <h2 class="modal-title" id="delete-title">Delete bouquet?</h2>
         <p class="modal-text" id="delete-name"></p>
         <div class="form-actions">
-          <button class="btn btn--outline" id="btn-delete-cancel">Cancel</button>
-          <button class="btn btn--danger" id="btn-delete-confirm">Delete</button>
+          <button class="btn btn--outline" id="btn-delete-cancel" type="button">Cancel</button>
+          <button class="btn btn--danger" id="btn-delete-confirm" type="button">Delete</button>
         </div>
       </div>
     </div>

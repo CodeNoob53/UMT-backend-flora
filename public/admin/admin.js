@@ -1,25 +1,71 @@
 const API = '/api/bouquets';
+const THEME_KEY = 'flora-admin-theme';
 
-// ── State ──────────────────────────────────────────────────────────────────
 let bouquets = [];
 let deleteTarget = null;
+let isLoading = false;
 
-// ── DOM refs ───────────────────────────────────────────────────────────────
-const tbody        = document.getElementById('bouquets-tbody');
+const state = {
+  query: '',
+  filter: 'all',
+  sort: 'newest',
+};
+
+const tbody = document.getElementById('bouquets-tbody');
 const modalOverlay = document.getElementById('modal-overlay');
-const deleteOverlay= document.getElementById('delete-overlay');
-const form         = document.getElementById('bouquet-form');
-const modalTitle   = document.getElementById('modal-title');
-const toast        = document.getElementById('toast');
+const deleteOverlay = document.getElementById('delete-overlay');
+const form = document.getElementById('bouquet-form');
+const modalTitle = document.getElementById('modal-title');
+const toast = document.getElementById('toast');
+const searchInput = document.getElementById('search-input');
+const filterSelect = document.getElementById('filter-select');
+const sortSelect = document.getElementById('sort-select');
+const tableStatus = document.getElementById('table-status');
+const themeToggle = document.getElementById('theme-toggle');
+const totalCount = document.getElementById('stat-total');
+const bestsellerCount = document.getElementById('stat-bestsellers');
+const favoriteCount = document.getElementById('stat-favorites');
+const noPhotoCount = document.getElementById('stat-no-photo');
 
-// ── Toast ──────────────────────────────────────────────────────────────────
-function showToast(msg, type = 'success') {
-  toast.textContent = msg;
-  toast.className = `toast show ${type}`;
-  setTimeout(() => toast.className = 'toast', 3000);
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
-// ── API helpers ────────────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+  toast.textContent = message;
+  toast.className = `toast show ${type}`;
+  window.clearTimeout(showToast.timeoutId);
+  showToast.timeoutId = window.setTimeout(() => {
+    toast.className = 'toast';
+  }, 3000);
+}
+
+function applyTheme(theme) {
+  const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const resolved = theme === 'auto' ? preferred : theme;
+  document.documentElement.dataset.theme = resolved;
+  themeToggle.value = theme;
+}
+
+function initTheme() {
+  const stored = localStorage.getItem(THEME_KEY) || 'auto';
+  applyTheme(stored);
+
+  themeToggle.addEventListener('change', () => {
+    localStorage.setItem(THEME_KEY, themeToggle.value);
+    applyTheme(themeToggle.value);
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if ((localStorage.getItem(THEME_KEY) || 'auto') === 'auto') applyTheme('auto');
+  });
+}
+
 async function apiFetch(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) {
@@ -29,65 +75,142 @@ async function apiFetch(url, options = {}) {
   return res.json();
 }
 
-// ── Render table ───────────────────────────────────────────────────────────
-function renderTable() {
-  tbody.innerHTML = bouquets.map(b => `
-    <tr data-id="${b.id}">
-      <td>
-        ${b.photoURL
-          ? `<img class="thumb" src="${b.photoURL}" alt="${b.title}">`
-          : `<div class="no-photo">🌸</div>`}
-      </td>
-      <td><strong>${b.title}</strong><br><span style="color:#999">${b.slug ?? ''}</span></td>
-      <td>$${b.price}</td>
-      <td>${b.orders ?? 0}</td>
-      <td><span class="badge ${b.bestseller ? 'badge--yes' : 'badge--no'}">${b.bestseller ? 'Yes' : 'No'}</span></td>
-      <td>
-        <div class="actions">
-          <button class="btn btn--icon btn--outline" data-action="photo" title="Upload photo">📷</button>
-          <button class="btn btn--icon btn--outline" data-action="edit"  title="Edit">✏️</button>
-          <button class="btn btn--icon btn--danger"  data-action="delete" title="Delete">🗑</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+function getFilteredBouquets() {
+  const query = state.query.trim().toLowerCase();
+
+  return bouquets
+    .filter(bouquet => {
+      const matchesQuery = !query || [bouquet.title, bouquet.slug, bouquet.category, bouquet.alt]
+        .some(value => String(value ?? '').toLowerCase().includes(query));
+
+      const matchesFilter =
+        state.filter === 'all' ||
+        (state.filter === 'bestseller' && bouquet.bestseller) ||
+        (state.filter === 'favorite' && bouquet.favorite) ||
+        (state.filter === 'no-photo' && !bouquet.photoURL);
+
+      return matchesQuery && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (state.sort === 'title') return String(a.title).localeCompare(String(b.title));
+      if (state.sort === 'price-low') return Number(a.price) - Number(b.price);
+      if (state.sort === 'price-high') return Number(b.price) - Number(a.price);
+      if (state.sort === 'orders') return Number(b.orders ?? 0) - Number(a.orders ?? 0);
+      return Number(b.id) - Number(a.id);
+    });
 }
 
-// ── Load ───────────────────────────────────────────────────────────────────
+function updateStats() {
+  totalCount.textContent = bouquets.length;
+  bestsellerCount.textContent = bouquets.filter(b => b.bestseller).length;
+  favoriteCount.textContent = bouquets.filter(b => b.favorite).length;
+  noPhotoCount.textContent = bouquets.filter(b => !b.photoURL).length;
+}
+
+function setTableStatus(message, type = 'muted') {
+  tableStatus.textContent = message;
+  tableStatus.dataset.type = type;
+  tableStatus.hidden = !message;
+}
+
+function renderTable() {
+  updateStats();
+
+  if (isLoading) {
+    setTableStatus('Loading bouquets...');
+    tbody.innerHTML = '';
+    return;
+  }
+
+  const visibleBouquets = getFilteredBouquets();
+
+  if (visibleBouquets.length === 0) {
+    const message = bouquets.length === 0
+      ? 'No bouquets yet. Add the first one to start filling the catalog.'
+      : 'No bouquets match the current search and filters.';
+    setTableStatus(message);
+    tbody.innerHTML = '';
+    return;
+  }
+
+  setTableStatus('');
+  tbody.innerHTML = visibleBouquets.map(b => {
+    const title = escapeHtml(b.title);
+    const slug = escapeHtml(b.slug ?? '');
+    const price = Number(b.price).toLocaleString('en-US');
+    const photo = b.photoURL
+      ? `<img class="thumb" src="${escapeHtml(b.photoURL)}" alt="${title}">`
+      : '<div class="no-photo" aria-label="No photo">No image</div>';
+
+    return `
+      <tr data-id="${b.id}">
+        <td>${photo}</td>
+        <td>
+          <strong>${title}</strong>
+          <span class="table-subtext">${slug || 'No slug'}</span>
+        </td>
+        <td>$${price}</td>
+        <td>${Number(b.orders ?? 0)}</td>
+        <td>
+          <span class="badge ${b.bestseller ? 'badge--yes' : 'badge--no'}">${b.bestseller ? 'Yes' : 'No'}</span>
+        </td>
+        <td>
+          <span class="badge ${b.favorite ? 'badge--yes' : 'badge--no'}">${b.favorite ? 'Yes' : 'No'}</span>
+        </td>
+        <td>
+          <div class="actions">
+            <button class="btn btn--icon btn--outline" data-action="photo" title="Upload photo" aria-label="Upload photo">Photo</button>
+            <button class="btn btn--icon btn--outline" data-action="edit" title="Edit" aria-label="Edit">Edit</button>
+            <button class="btn btn--icon btn--danger" data-action="delete" title="Delete" aria-label="Delete">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 async function loadBouquets() {
+  isLoading = true;
+  renderTable();
+
   try {
     bouquets = await apiFetch(API);
     renderTable();
-  } catch (e) {
-    showToast(e.message, 'error');
+  } catch (error) {
+    setTableStatus(error.message, 'error');
+    showToast(error.message, 'error');
+  } finally {
+    isLoading = false;
+    renderTable();
   }
 }
 
-// ── Open / close modal ─────────────────────────────────────────────────────
 function openModal(bouquet = null) {
   form.reset();
   document.getElementById('field-id').value = bouquet?.id ?? '';
-  modalTitle.textContent = bouquet ? 'Edit Bouquet' : 'Add Bouquet';
+  modalTitle.textContent = bouquet ? 'Edit bouquet' : 'Add bouquet';
 
   if (bouquet) {
-    document.getElementById('field-title').value       = bouquet.title ?? '';
-    document.getElementById('field-price').value       = bouquet.price ?? '';
-    document.getElementById('field-slug').value        = bouquet.slug ?? '';
-    document.getElementById('field-text').value        = bouquet.text ?? '';
+    document.getElementById('field-title').value = bouquet.title ?? '';
+    document.getElementById('field-price').value = bouquet.price ?? '';
+    document.getElementById('field-slug').value = bouquet.slug ?? '';
+    document.getElementById('field-text').value = bouquet.text ?? '';
     document.getElementById('field-description').value = bouquet.description ?? '';
-    document.getElementById('field-alt').value         = bouquet.alt ?? '';
-    document.getElementById('field-bestseller').checked= bouquet.bestseller ?? false;
-    document.getElementById('field-favorite').checked  = bouquet.favorite ?? false;
+    document.getElementById('field-alt').value = bouquet.alt ?? '';
+    document.getElementById('field-orders').value = bouquet.orders ?? 0;
+    document.getElementById('field-bestseller').checked = bouquet.bestseller ?? false;
+    document.getElementById('field-favorite').checked = bouquet.favorite ?? false;
   }
 
-  // hide photo field on edit (separate PATCH)
-  document.getElementById('photo-row').style.display = bouquet ? 'none' : '';
+  document.getElementById('photo-row').hidden = Boolean(bouquet);
   modalOverlay.classList.remove('hidden');
+  document.getElementById('field-title').focus();
 }
 
-function closeModal() { modalOverlay.classList.add('hidden'); }
+function closeModal() {
+  modalOverlay.classList.add('hidden');
+}
 
-// ── Photo upload ───────────────────────────────────────────────────────────
 function openPhotoUpload(id) {
   const input = document.createElement('input');
   input.type = 'file';
@@ -95,48 +218,53 @@ function openPhotoUpload(id) {
   input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
+
     const fd = new FormData();
     fd.append('photo', file);
+
     try {
-      showToast('Uploading & processing…');
+      showToast('Uploading and processing photo...');
       const updated = await apiFetch(`${API}/${id}/photo`, { method: 'PATCH', body: fd });
       bouquets = bouquets.map(b => b.id === updated.id ? updated : b);
       renderTable();
       showToast('Photo updated');
-    } catch (e) {
-      showToast(e.message, 'error');
+    } catch (error) {
+      showToast(error.message, 'error');
     }
   };
   input.click();
 }
 
-// ── Submit form ────────────────────────────────────────────────────────────
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-  const id    = document.getElementById('field-id').value;
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const id = document.getElementById('field-id').value;
   const isNew = !id;
+  const submitButton = document.getElementById('btn-submit');
 
   const body = {
-    title:       document.getElementById('field-title').value.trim(),
-    price:       Number(document.getElementById('field-price').value),
-    slug:        document.getElementById('field-slug').value.trim() || undefined,
-    text:        document.getElementById('field-text').value.trim() || undefined,
+    title: document.getElementById('field-title').value.trim(),
+    price: Number(document.getElementById('field-price').value),
+    slug: document.getElementById('field-slug').value.trim() || undefined,
+    text: document.getElementById('field-text').value.trim() || undefined,
     description: document.getElementById('field-description').value.trim() || undefined,
-    alt:         document.getElementById('field-alt').value.trim() || undefined,
-    bestseller:  document.getElementById('field-bestseller').checked,
-    favorite:    document.getElementById('field-favorite').checked,
+    alt: document.getElementById('field-alt').value.trim() || undefined,
+    orders: Number(document.getElementById('field-orders').value || 0),
+    bestseller: document.getElementById('field-bestseller').checked,
+    favorite: document.getElementById('field-favorite').checked,
   };
+
+  submitButton.disabled = true;
+  submitButton.textContent = isNew ? 'Creating...' : 'Saving...';
 
   try {
     if (isNew) {
-      // create
       const created = await apiFetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
-      // upload photo if selected
       const photoFile = document.getElementById('field-photo').files[0];
       if (photoFile) {
         const fd = new FormData();
@@ -159,47 +287,65 @@ form.addEventListener('submit', async e => {
 
     closeModal();
     renderTable();
-  } catch (e) {
-    showToast(e.message, 'error');
+  } catch (error) {
+    showToast(error.message, 'error');
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = 'Save';
   }
 });
 
-// ── Delete ─────────────────────────────────────────────────────────────────
 function openDeleteConfirm(id) {
   deleteTarget = id;
-  const b = bouquets.find(b => b.id === id);
-  document.getElementById('delete-name').textContent = b?.title ?? '';
+  const bouquet = bouquets.find(b => b.id === id);
+  document.getElementById('delete-name').textContent = bouquet?.title ?? '';
   deleteOverlay.classList.remove('hidden');
 }
 
 document.getElementById('btn-delete-confirm').addEventListener('click', async () => {
   if (!deleteTarget) return;
+
   try {
     await apiFetch(`${API}/${deleteTarget}`, { method: 'DELETE' });
     bouquets = bouquets.filter(b => b.id !== deleteTarget);
     renderTable();
     showToast('Bouquet deleted');
-  } catch (e) {
-    showToast(e.message, 'error');
+  } catch (error) {
+    showToast(error.message, 'error');
   } finally {
     deleteOverlay.classList.add('hidden');
     deleteTarget = null;
   }
 });
 
-// ── Event delegation ───────────────────────────────────────────────────────
-tbody.addEventListener('click', e => {
-  const btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  const id = Number(btn.closest('tr').dataset.id);
-  const action = btn.dataset.action;
+tbody.addEventListener('click', event => {
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
 
-  if (action === 'edit')   openModal(bouquets.find(b => b.id === id));
+  const id = Number(button.closest('tr').dataset.id);
+  const action = button.dataset.action;
+
+  if (action === 'edit') openModal(bouquets.find(b => b.id === id));
   if (action === 'delete') openDeleteConfirm(id);
-  if (action === 'photo')  openPhotoUpload(id);
+  if (action === 'photo') openPhotoUpload(id);
 });
 
-// ── Buttons ────────────────────────────────────────────────────────────────
+searchInput.addEventListener('input', event => {
+  state.query = event.target.value;
+  renderTable();
+});
+
+filterSelect.addEventListener('change', event => {
+  state.filter = event.target.value;
+  renderTable();
+});
+
+sortSelect.addEventListener('change', event => {
+  state.sort = event.target.value;
+  renderTable();
+});
+
+document.getElementById('btn-refresh').addEventListener('click', loadBouquets);
 document.getElementById('btn-add').addEventListener('click', () => openModal());
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
@@ -207,7 +353,16 @@ document.getElementById('btn-delete-cancel').addEventListener('click', () => {
   deleteOverlay.classList.add('hidden');
   deleteTarget = null;
 });
-modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
 
-// ── Init ───────────────────────────────────────────────────────────────────
+modalOverlay.addEventListener('click', event => {
+  if (event.target === modalOverlay) closeModal();
+});
+
+window.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  closeModal();
+  deleteOverlay.classList.add('hidden');
+});
+
+initTheme();
 loadBouquets();
