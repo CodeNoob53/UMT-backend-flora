@@ -1,43 +1,49 @@
 import fs from 'fs/promises';
-import path from 'path';
 import sharp from 'sharp';
+import { Readable } from 'stream';
+import cloudinary from '../config/cloudinary.js';
 import { IMAGE_BREAKPOINTS, AVIF_QUALITY, DPR_SCALES } from '../config/imageBreakpoints.js';
 
-const PHOTOS_DIR = path.resolve('public/photos');
+async function uploadBuffer(buffer, publicId, format, options = {}) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { public_id: publicId, resource_type: 'image', format, overwrite: true, ...options },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    Readable.from(buffer).pipe(stream);
+  });
+}
 
 export async function processImage(tempPath, slug) {
-  const buffer = await fs.readFile(tempPath);
+  const original = await fs.readFile(tempPath);
+  await fs.unlink(tempPath);
 
-  const avifFiles = [];
+  const uploads = [];
 
   for (const bp of IMAGE_BREAKPOINTS) {
-    const dir = path.join(PHOTOS_DIR, bp.name);
-    await fs.mkdir(dir, { recursive: true });
-
     for (const dpr of DPR_SCALES) {
-      const filename = `${slug}_@${dpr}x.avif`;
-      const outPath = path.join(dir, filename);
-
-      await sharp(buffer)
+      const buffer = await sharp(original)
         .resize(bp.width * dpr)
         .avif({ quality: AVIF_QUALITY[dpr] })
-        .toFile(outPath);
+        .toBuffer();
 
-      avifFiles.push(`${bp.name}/${filename}`);
+      const publicId = `flora/bouquets/${bp.name}/${slug}_@${dpr}x`;
+      await uploadBuffer(buffer, publicId, 'avif');
+      uploads.push(publicId);
     }
   }
 
-  // mozjpeg fallback — quality 100 стискає через кращий алгоритм квантування
-  const fallbackName = `${slug}.jpg`;
-  await sharp(buffer)
+  // mozjpeg fallback
+  const fallbackBuffer = await sharp(original)
     .jpeg({ mozjpeg: true, quality: 100 })
-    .toFile(path.join(PHOTOS_DIR, fallbackName));
+    .toBuffer();
 
-  await fs.unlink(tempPath);
+  const fallbackPublicId = `flora/bouquets/fallback/${slug}`;
+  const fallbackResult = await uploadBuffer(fallbackBuffer, fallbackPublicId, 'jpg');
 
   return {
     breakpoints: IMAGE_BREAKPOINTS.map(bp => bp.name),
-    fallback: fallbackName,
-    photoURL: `/photos/${fallbackName}`,
+    fallback: `${slug}.jpg`,
+    photoURL: fallbackResult.secure_url,
   };
 }
