@@ -15,6 +15,12 @@ services:
           property: connectionString
       - key: NODE_ENV
         value: production
+      - key: CLD_NAME
+        sync: false
+      - key: CLD_API_KEY
+        sync: false
+      - key: CLD_API_SECRET
+        sync: false
 
 databases:
   - name: umt-backend-flora-db
