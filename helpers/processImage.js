@@ -1,12 +1,12 @@
 import fs from 'fs/promises';
 import sharp from 'sharp';
 import { Readable } from 'stream';
-import cloudinary from '../config/cloudinary.js';
+import { getCloudinary } from '../config/cloudinary.js';
 import { IMAGE_BREAKPOINTS, AVIF_QUALITY, DPR_SCALES } from '../config/imageBreakpoints.js';
 
 async function uploadBuffer(buffer, publicId, format, options = {}) {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
+    const stream = getCloudinary().uploader.upload_stream(
       { public_id: publicId, resource_type: 'image', format, overwrite: true, ...options },
       (error, result) => (error ? reject(error) : resolve(result))
     );
