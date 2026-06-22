@@ -10,7 +10,6 @@ Express REST API for the Flora flower shop project. The server works with a Post
 - Sequelize
 - Joi
 - Multer
-- Sharp
 - Cloudinary
 - Swagger UI
 
@@ -62,20 +61,17 @@ The admin panel is protected with Basic Auth. Mutating API routes are protected 
 | PUT | `/api/bouquets/:id` | Update bouquet |
 | DELETE | `/api/bouquets/:id` | Delete bouquet |
 | PATCH | `/api/bouquets/:id/favorite` | Toggle favorite status |
-| PATCH | `/api/bouquets/:id/photo` | Upload and process bouquet photo |
+| PATCH | `/api/bouquets/:id/photo` | Upload bouquet photo |
 
 ## Image Uploads
 
-The project uses Multer to receive uploaded files into the temporary `temp/` directory. After that, Sharp processes the image and generates optimized assets:
+The project uses Multer to receive uploaded files into the temporary `temp/` directory. After that, the original image is uploaded to Cloudinary, the temp file is removed, and the returned URL is saved in the bouquet's `photoURL` field.
 
-- AVIF images for configured breakpoints and DPR variants
-- JPEG fallback
-
-The processed images are uploaded to Cloudinary, and the returned URL is saved in the bouquet's `photoURL` field.
+Image optimization is intentionally delegated to Cloudinary delivery transformations (`f_auto`, `q_auto`, width transformations, and browser-specific formats such as WebP/AVIF when available). This keeps the Render free tier backend lightweight and avoids long server-side image processing during admin uploads.
 
 This intentionally replaces permanent local storage in `public/photos`. Local storage can work during development, but on Render free tier the filesystem is ephemeral: uploaded files may disappear after redeploys, restarts, or new instances. Cloudinary keeps uploaded bouquet photos persistent and publicly available, which makes the deployed backend more stable.
 
-When a bouquet is deleted, its generated Cloudinary image variants are removed as well. When a photo is replaced with the same slug, Cloudinary overwrites the existing public ids; if the slug changed, the old image variants are cleaned up after the new upload succeeds.
+When a bouquet is deleted, its Cloudinary image is removed as well. When a photo is replaced with the same slug, Cloudinary overwrites the existing public id; if the slug changed, the old image is cleaned up after the new upload succeeds.
 
 The `public/photos/.gitkeep` directory is kept in the repository to match the original course structure and to leave room for a local-storage fallback if needed.
 

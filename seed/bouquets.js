@@ -26,8 +26,6 @@ const products = dbJson.products.map(p => ({
   category: p.category ?? 'bouquet',
   slug: p.slug ?? p.id,
   alt: p.alt ?? null,
-  breakpoints: p.breakpoints ?? ['mob', 'tab', 'pc'],
-  fallback: p.fallback ?? null,
 }));
 
 await Bouquet.bulkCreate(products);

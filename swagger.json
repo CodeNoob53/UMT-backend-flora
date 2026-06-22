@@ -73,7 +73,7 @@
     },
     "/bouquets/{id}/photo": {
       "patch": {
-        "summary": "Upload bouquet photo (generates AVIF retina set + mozjpeg fallback)",
+        "summary": "Upload bouquet photo to Cloudinary",
         "tags": ["Bouquets"],
         "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
         "requestBody": {
@@ -105,9 +105,7 @@
           "orders": { "type": "integer" },
           "category": { "type": "string" },
           "slug": { "type": "string" },
-          "alt": { "type": "string" },
-          "breakpoints": { "type": "array", "items": { "type": "string" } },
-          "fallback": { "type": "string" }
+          "alt": { "type": "string" }
         }
       },
       "BouquetCreate": {

@@ -65,9 +65,10 @@ function setUploadProgress(isVisible, title = 'Processing photo') {
 
   uploadStartedAt = Date.now();
   uploadProgressTitle.textContent = title;
+  const baseMessage =
+    'The backend is uploading the image to Cloudinary. Delivery optimization is handled by Cloudinary. Please keep this window open.';
   uploadOverlayProgressTitle.textContent = title;
-  uploadProgressText.textContent =
-    'The backend is generating AVIF sizes, creating a JPEG fallback, and uploading everything to Cloudinary. Please keep this window open.';
+  uploadProgressText.textContent = baseMessage;
   uploadOverlayProgressText.textContent = uploadProgressText.textContent;
 
   const updateElapsed = () => {
@@ -77,7 +78,7 @@ function setUploadProgress(isVisible, title = 'Processing photo') {
 
     if (elapsed >= 20) {
       uploadProgressText.textContent =
-        'Still working. Large images and Render free tier can take a while, but the upload is still in progress.';
+        'Still working. Large images and Render free tier can take a while, but the Cloudinary upload is still in progress.';
       uploadOverlayProgressText.textContent = uploadProgressText.textContent;
     }
   };

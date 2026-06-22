@@ -1,6 +1,6 @@
 import * as bouquetService from '../services/bouquetService.js';
 import { processImage } from '../helpers/processImage.js';
-import { deleteBouquetImages, getBouquetImageSlug } from '../helpers/cloudinaryImages.js';
+import { deleteBouquetImage } from '../helpers/cloudinaryImages.js';
 import { HttpError } from '../helpers/HttpError.js';
 import { asyncHandler } from '../helpers/asyncHandler.js';
 
@@ -26,7 +26,7 @@ export const update = asyncHandler(async (req, res) => {
 
 export const remove = asyncHandler(async (req, res) => {
   const existing = await bouquetService.getById(req.params.id);
-  await deleteBouquetImages(existing);
+  await deleteBouquetImage(existing);
 
   const bouquet = await bouquetService.remove(req.params.id);
   res.json(bouquet);
@@ -42,13 +42,9 @@ export const updatePhoto = asyncHandler(async (req, res) => {
 
   const bouquet = await bouquetService.getById(req.params.id);
   const slug = bouquet.slug ?? `bouquet-${bouquet.id}`;
-  const previousSlug = getBouquetImageSlug(bouquet);
 
+  await deleteBouquetImage(bouquet);
   const photoData = await processImage(req.file.path, slug);
-  if (previousSlug && previousSlug !== slug) {
-    await deleteBouquetImages(bouquet);
-  }
-
   const updated = await bouquetService.updatePhoto(req.params.id, photoData);
   res.json(updated);
 });

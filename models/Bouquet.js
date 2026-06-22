@@ -42,13 +42,6 @@ const Bouquet = sequelize.define('Bouquet', {
   alt: {
     type: DataTypes.STRING,
   },
-  breakpoints: {
-    type: DataTypes.ARRAY(DataTypes.STRING),
-    defaultValue: [],
-  },
-  fallback: {
-    type: DataTypes.STRING,
-  },
 });
 
 export default Bouquet;

@@ -1,40 +1,24 @@
 import { getCloudinary } from '../config/cloudinary.js';
-import { IMAGE_BREAKPOINTS, DPR_SCALES } from '../config/imageBreakpoints.js';
 
-export function getBouquetImageSlug(bouquet) {
-  if (bouquet?.fallback) {
-    return bouquet.fallback.replace(/\.[^.]+$/, '');
-  }
+function getPublicIdFromUrl(photoURL) {
+  if (!photoURL?.includes('/upload/')) return null;
 
-  if (bouquet?.slug) return bouquet.slug;
-  if (bouquet?.id) return `bouquet-${bouquet.id}`;
-  return null;
+  const withoutQuery = photoURL.split('?')[0];
+  const match = withoutQuery.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?$/);
+  return match?.[1] ?? null;
 }
 
-function getBouquetImagePublicIds(bouquet) {
-  if (!bouquet?.photoURL) return [];
-
-  const slug = getBouquetImageSlug(bouquet);
-  if (!slug) return [];
-
-  const breakpointNames = bouquet.breakpoints?.length
-    ? bouquet.breakpoints
-    : IMAGE_BREAKPOINTS.map(bp => bp.name);
-
-  const responsiveIds = breakpointNames.flatMap(bp =>
-    DPR_SCALES.map(dpr => `flora/bouquets/${bp}/${slug}_@${dpr}x`)
-  );
-
-  return [...responsiveIds, `flora/bouquets/fallback/${slug}`];
+function getBouquetPublicId(bouquet) {
+  return getPublicIdFromUrl(bouquet?.photoURL)
+    ?? (bouquet?.slug ? `flora/bouquets/${bouquet.slug}` : null)
+    ?? (bouquet?.id ? `flora/bouquets/bouquet-${bouquet.id}` : null);
 }
 
-export async function deleteBouquetImages(bouquet) {
-  const publicIds = getBouquetImagePublicIds(bouquet);
-  if (publicIds.length === 0) return;
+export async function deleteBouquetImage(bouquet) {
+  if (!bouquet?.photoURL) return;
 
-  await Promise.allSettled(
-    publicIds.map(publicId =>
-      getCloudinary().uploader.destroy(publicId, { resource_type: 'image' })
-    )
-  );
+  const publicId = getBouquetPublicId(bouquet);
+  if (!publicId) return;
+
+  await getCloudinary().uploader.destroy(publicId, { resource_type: 'image' });
 }
