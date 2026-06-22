@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: umt-backend-flora
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/bouquets
+    autoDeployTrigger: commit
+    envVars:
+      - key: DB_URL
+        fromDatabase:
+          name: umt-backend-flora-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+
+databases:
+  - name: umt-backend-flora-db
+    plan: free
+    region: frankfurt
+    databaseName: flora_db
+    user: flora_user
+    postgresMajorVersion: "16"
