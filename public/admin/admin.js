@@ -9,6 +9,7 @@ let isLoading = false;
 let activeRequest = false;
 let uploadStartedAt = 0;
 let uploadTimerId = null;
+let activeTab = 'bouquets';
 
 const state = {
   query: '',
@@ -20,6 +21,8 @@ const tbody = document.getElementById('bouquets-tbody');
 const ordersTbody = document.getElementById('orders-tbody');
 const modalOverlay = document.getElementById('modal-overlay');
 const deleteOverlay = document.getElementById('delete-overlay');
+const photoPreviewOverlay = document.getElementById('photo-preview-overlay');
+const photoPreviewImg = document.getElementById('photo-preview-img');
 const form = document.getElementById('bouquet-form');
 const modalTitle = document.getElementById('modal-title');
 const toast = document.getElementById('toast');
@@ -42,6 +45,28 @@ const uploadOverlay = document.getElementById('upload-overlay');
 const uploadOverlayProgressTitle = document.getElementById('upload-overlay-progress-title');
 const uploadOverlayProgressTime = document.getElementById('upload-overlay-progress-time');
 const uploadOverlayProgressText = document.getElementById('upload-overlay-progress-text');
+const tabButtons = [...document.querySelectorAll('[data-tab]')];
+const tabPanels = [...document.querySelectorAll('[data-panel]')];
+const addButton = document.getElementById('btn-add');
+const refreshButton = document.getElementById('btn-refresh');
+
+function setActiveTab(nextTab) {
+  activeTab = nextTab === 'orders' ? 'orders' : 'bouquets';
+
+  tabButtons.forEach(button => {
+    const isActive = button.dataset.tab === activeTab;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
+    button.tabIndex = isActive ? 0 : -1;
+  });
+
+  tabPanels.forEach(panel => {
+    panel.hidden = panel.dataset.panel !== activeTab;
+  });
+
+  addButton.hidden = activeTab !== 'bouquets';
+  refreshButton.textContent = activeTab === 'orders' ? 'Refresh orders' : 'Refresh bouquets';
+}
 
 function setBusy(isBusy, message = '') {
   activeRequest = isBusy;
@@ -259,10 +284,12 @@ function renderTable() {
   setTableStatus('');
   tbody.innerHTML = visibleBouquets.map(b => {
     const title = escapeHtml(b.title);
-    const slug = escapeHtml(b.slug ?? '');
+    const altText = escapeHtml(b.alt || 'No alt text');
     const price = Number(b.price).toLocaleString('en-US');
     const photo = b.photoURL
-      ? `<img class="thumb" src="${escapeHtml(b.photoURL)}" alt="${title}">`
+      ? `<button class="thumb-button" type="button" data-action="preview" aria-label="Preview ${title}">
+          <img class="thumb" src="${escapeHtml(b.photoURL)}" alt="${altText}">
+        </button>`
       : '<div class="no-photo" aria-label="No photo">No image</div>';
 
     return `
@@ -270,7 +297,7 @@ function renderTable() {
         <td>${photo}</td>
         <td>
           <strong>${title}</strong>
-          <span class="table-subtext">${slug || 'No slug'}</span>
+          <span class="table-subtext">${altText}</span>
         </td>
         <td>$${price}</td>
         <td>${Number(b.orders ?? 0)}</td>
@@ -346,6 +373,21 @@ function closeModal() {
     return;
   }
   modalOverlay.classList.add('hidden');
+}
+
+function openPhotoPreview(bouquet) {
+  if (!bouquet?.photoURL) return;
+
+  photoPreviewImg.src = bouquet.photoURL;
+  photoPreviewImg.alt = bouquet.alt ?? bouquet.title ?? '';
+  document.getElementById('photo-preview-title').textContent = bouquet.title ?? 'Bouquet photo';
+  photoPreviewOverlay.classList.remove('hidden');
+}
+
+function closePhotoPreview() {
+  photoPreviewOverlay.classList.add('hidden');
+  photoPreviewImg.src = '';
+  photoPreviewImg.alt = '';
 }
 
 function openPhotoUpload(id) {
@@ -506,6 +548,7 @@ tbody.addEventListener('click', event => {
   if (action === 'edit') openModal(bouquets.find(b => b.id === id));
   if (action === 'delete') openDeleteConfirm(id);
   if (action === 'photo') openPhotoUpload(id);
+  if (action === 'preview') openPhotoPreview(bouquets.find(b => b.id === id));
 });
 
 ordersTbody.addEventListener('change', async event => {
@@ -568,13 +611,36 @@ sortSelect.addEventListener('change', event => {
   renderTable();
 });
 
-document.getElementById('btn-refresh').addEventListener('click', () => {
+tabButtons.forEach((button, index) => {
+  button.addEventListener('click', () => setActiveTab(button.dataset.tab));
+  button.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+
+    const lastIndex = tabButtons.length - 1;
+    let nextIndex = index;
+    if (event.key === 'ArrowLeft') nextIndex = index === 0 ? lastIndex : index - 1;
+    if (event.key === 'ArrowRight') nextIndex = index === lastIndex ? 0 : index + 1;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = lastIndex;
+
+    tabButtons[nextIndex].focus();
+    setActiveTab(tabButtons[nextIndex].dataset.tab);
+  });
+});
+
+refreshButton.addEventListener('click', () => {
+  if (activeTab === 'orders') {
+    loadOrders();
+    return;
+  }
+
   loadBouquets();
-  loadOrders();
 });
 document.getElementById('btn-refresh-orders').addEventListener('click', loadOrders);
-document.getElementById('btn-add').addEventListener('click', () => openModal());
+addButton.addEventListener('click', () => openModal());
 document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('photo-preview-close').addEventListener('click', closePhotoPreview);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
 document.getElementById('btn-delete-cancel').addEventListener('click', () => {
   deleteOverlay.classList.add('hidden');
@@ -586,16 +652,22 @@ modalOverlay.addEventListener('click', event => {
   if (event.target === modalOverlay) closeModal();
 });
 
+photoPreviewOverlay.addEventListener('click', event => {
+  if (event.target === photoPreviewOverlay) closePhotoPreview();
+});
+
 window.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   if (activeRequest) {
     showToast('Please wait until the current operation finishes.', 'error');
     return;
   }
+  closePhotoPreview();
   closeModal();
   deleteOverlay.classList.add('hidden');
 });
 
 initTheme();
+setActiveTab('bouquets');
 loadBouquets();
 loadOrders();

@@ -54,7 +54,16 @@
       </article>
     </section>
 
-    <section class="panel" id="section-list">
+    <nav class="tabs" aria-label="Admin sections" role="tablist">
+      <button class="tab is-active" id="tab-bouquets" type="button" role="tab" aria-selected="true" aria-controls="section-list" data-tab="bouquets">
+        Product cards
+      </button>
+      <button class="tab" id="tab-orders" type="button" role="tab" aria-selected="false" aria-controls="section-orders" data-tab="orders">
+        Orders
+      </button>
+    </nav>
+
+    <section class="panel" id="section-list" role="tabpanel" aria-labelledby="tab-bouquets" data-panel="bouquets">
       <div class="toolbar">
         <label class="field field--search">
           <span class="field-label">Search</span>
@@ -103,7 +112,7 @@
       </div>
     </section>
 
-    <section class="panel panel--spaced" id="section-orders">
+    <section class="panel" id="section-orders" role="tabpanel" aria-labelledby="tab-orders" data-panel="orders" hidden>
       <div class="section-head">
         <div>
           <span class="eyebrow">Requests</span>
@@ -233,6 +242,14 @@
             The backend is uploading the image to Cloudinary. Delivery optimization is handled by Cloudinary. Please keep this window open.
           </p>
         </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="photo-preview-overlay">
+      <div class="modal modal--image" role="dialog" aria-modal="true" aria-labelledby="photo-preview-title">
+        <button class="modal-close" id="photo-preview-close" type="button" aria-label="Close">x</button>
+        <h2 class="modal-title" id="photo-preview-title">Bouquet photo</h2>
+        <img class="photo-preview-img" id="photo-preview-img" src="" alt="">
       </div>
     </div>
   </main>
