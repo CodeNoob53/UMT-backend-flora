@@ -38,7 +38,7 @@ const orders = [
     address: '22 Garden Street, Apt 8',
     message: 'Birthday bouquet, pastel colors preferred.',
     quantity: 2,
-    status: 'new',
+    status: 'processed',
     ...product(1),
   },
   {
@@ -56,7 +56,7 @@ const orders = [
     address: '',
     message: 'I will pick it up today.',
     quantity: 1,
-    status: 'new',
+    status: 'processed',
     ...product(3),
   },
   {
@@ -67,6 +67,33 @@ const orders = [
     quantity: 1,
     status: 'cancelled',
     ...product(4),
+  },
+  {
+    name: 'Grace Wilson',
+    phone: '+1 (555) 013-4470',
+    address: '11 Lily Court',
+    message: 'Anniversary order, please make it elegant.',
+    quantity: 1,
+    status: 'processed',
+    ...product(0),
+  },
+  {
+    name: 'Lily Moore',
+    phone: '+1 (555) 017-5932',
+    address: 'Hotel lobby, 5 Queen Street',
+    message: 'Guest pickup at reception.',
+    quantity: 3,
+    status: 'processed',
+    ...product(1),
+  },
+  {
+    name: 'Chloe Taylor',
+    phone: '+1 (555) 012-8088',
+    address: '99 Orchard Road',
+    message: 'Please use soft pink wrapping.',
+    quantity: 1,
+    status: 'new',
+    ...product(2),
   },
 ];
 
