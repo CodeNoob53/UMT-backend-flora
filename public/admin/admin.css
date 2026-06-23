@@ -33,7 +33,7 @@
   --bg: #f4f7ee;
   --panel: #ffffff;
   --panel-soft: #f6f9f0;
-  --table-head: #edf4e6;
+  --table-head: #ffffff;
   --text: #030c01;
   --muted: #5a6356;
   --border: rgba(3, 12, 1, 0.12);
@@ -73,7 +73,7 @@
   --bg: #f4f7ee;
   --panel: #ffffff;
   --panel-soft: #f6f9f0;
-  --table-head: #edf4e6;
+  --table-head: #ffffff;
   --text: #030c01;
   --muted: #5a6356;
   --border: rgba(3, 12, 1, 0.12);
@@ -260,7 +260,7 @@ textarea {
 .tab {
   position: relative;
   z-index: 1;
-  flex: 0 0 132px;
+  flex: 0 0 152px;
   min-height: 50px;
   padding: 12px 22px;
   color: var(--muted);
@@ -452,7 +452,6 @@ textarea {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  border-bottom-color: color-mix(in srgb, var(--accent) 26%, var(--border));
 }
 
 .table tr:last-child td {
