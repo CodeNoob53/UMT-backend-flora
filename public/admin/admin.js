@@ -815,7 +815,6 @@ refreshButton.addEventListener('click', () => {
 
   loadBouquets();
 });
-document.getElementById('btn-refresh-orders').addEventListener('click', loadOrders);
 addButton.addEventListener('click', () => openModal());
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('photo-preview-close').addEventListener('click', closePhotoPreview);
