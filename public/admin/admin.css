@@ -33,6 +33,7 @@
   --bg: #f4f7ee;
   --panel: #ffffff;
   --panel-soft: #f6f9f0;
+  --table-head: #edf4e6;
   --text: #030c01;
   --muted: #5a6356;
   --border: rgba(3, 12, 1, 0.12);
@@ -52,6 +53,7 @@
     --bg: #0e140f;
     --panel: #161f17;
     --panel-soft: #1d281e;
+    --table-head: #223021;
     --text: #eaf3e4;
     --muted: #9aab95;
     --border: #2c3a2d;
@@ -71,6 +73,7 @@
   --bg: #f4f7ee;
   --panel: #ffffff;
   --panel-soft: #f6f9f0;
+  --table-head: #edf4e6;
   --text: #030c01;
   --muted: #5a6356;
   --border: rgba(3, 12, 1, 0.12);
@@ -89,6 +92,7 @@
   --bg: #0e140f;
   --panel: #161f17;
   --panel-soft: #1d281e;
+  --table-head: #223021;
   --text: #eaf3e4;
   --muted: #9aab95;
   --border: #2c3a2d;
@@ -256,13 +260,16 @@ textarea {
 .tab {
   position: relative;
   z-index: 1;
+  flex: 0 0 132px;
   min-height: 50px;
   padding: 12px 22px;
   color: var(--muted);
   background: var(--panel-soft);
   border: 1px solid var(--border);
   border-radius: var(--radius) var(--radius) 0 0;
+  font-family: var(--font-head);
   font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
   transition: color 150ms, background 150ms;
 }
@@ -439,12 +446,13 @@ textarea {
 }
 
 .table th {
-  color: var(--muted);
-  background: var(--panel-soft);
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+  background: var(--table-head);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  border-bottom-color: color-mix(in srgb, var(--accent) 26%, var(--border));
 }
 
 .table tr:last-child td {
@@ -906,6 +914,10 @@ textarea {
   .header-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .tab {
+    flex-basis: 50%;
   }
 
   .stats-grid {
