@@ -72,7 +72,10 @@
       <div class="toolbar">
         <label class="field field--search">
           <span class="field-label">Search</span>
-          <input class="input" type="search" id="search-input" placeholder="Title, slug, category..." autocomplete="off">
+          <span class="search-control">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="sprite.svg#icon-search"></use></svg>
+            <input class="input input--search" type="search" id="search-input" placeholder="Title, slug, category..." autocomplete="off">
+          </span>
         </label>
 
         <label class="field">
@@ -138,6 +141,14 @@
       <p class="table-status" id="orders-status" hidden></p>
 
       <div class="toolbar toolbar--orders">
+        <label class="field field--search">
+          <span class="field-label">Search</span>
+          <span class="search-control">
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="sprite.svg#icon-search"></use></svg>
+            <input class="input input--search" type="search" id="orders-search-input" placeholder="Order number, customer, phone..." autocomplete="off">
+          </span>
+        </label>
+
         <label class="field">
           <span class="field-label">Status</span>
           <select class="select" id="orders-filter-select">
@@ -164,11 +175,10 @@
         <table class="table table--orders">
           <thead>
             <tr>
+              <th>Order</th>
               <th>Customer</th>
               <th>Product</th>
-              <th>Message</th>
               <th>Status</th>
-              <th>Created</th>
               <th>Actions</th>
             </tr>
           </thead>

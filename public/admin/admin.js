@@ -17,6 +17,7 @@ const state = {
   filter: 'all',
   sort: 'newest',
   page: 1,
+  ordersQuery: '',
   ordersFilter: 'all',
   ordersSort: 'newest',
 };
@@ -33,6 +34,7 @@ const form = document.getElementById('bouquet-form');
 const modalTitle = document.getElementById('modal-title');
 const toast = document.getElementById('toast');
 const searchInput = document.getElementById('search-input');
+const ordersSearchInput = document.getElementById('orders-search-input');
 const filterSelect = document.getElementById('filter-select');
 const sortSelect = document.getElementById('sort-select');
 const ordersFilterSelect = document.getElementById('orders-filter-select');
@@ -239,9 +241,25 @@ function renderPagination(total, pageCount, startIndex, currentCount) {
 
 function getFilteredOrders() {
   const statusRank = { new: 1, processed: 2, completed: 3, cancelled: 4 };
+  const query = state.ordersQuery.trim().toLowerCase();
 
   return orders
-    .filter(order => state.ordersFilter === 'all' || order.status === state.ordersFilter)
+    .filter(order => {
+      const matchesQuery = !query || [
+        formatOrderNumber(order),
+        order.name,
+        order.phone,
+        order.address,
+        order.message,
+        order.productTitle,
+        order.productId ? `Product #${order.productId}` : '',
+        getOrderStatusLabel(order.status),
+      ].some(value => String(value ?? '').toLowerCase().includes(query));
+
+      const matchesStatus = state.ordersFilter === 'all' || order.status === state.ordersFilter;
+
+      return matchesQuery && matchesStatus;
+    })
     .sort((a, b) => {
       if (state.ordersSort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
       if (state.ordersSort === 'customer') return String(a.name).localeCompare(String(b.name));
@@ -320,13 +338,14 @@ function renderOrders() {
   ordersTbody.innerHTML = visibleOrders.map(order => `
     <tr data-id="${order.id}">
       <td>
+        <strong class="order-number">${escapeHtml(formatOrderNumber(order))}</strong>
+      </td>
+      <td>
         <strong>${escapeHtml(order.name)}</strong>
-        <span class="table-subtext order-number">${escapeHtml(formatOrderNumber(order))}</span>
         <span class="table-subtext">${escapeHtml(order.phone)}</span>
         <span class="table-subtext">${escapeHtml(order.address || 'No address')}</span>
       </td>
       <td>${escapeHtml(formatOrderProduct(order))}</td>
-      <td class="cell-message">${escapeHtml(order.message || 'No message')}</td>
       <td>
         <select class="select select--compact order-status-select" data-order-action="status" ${activeRequest ? 'disabled' : ''}>
           <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
@@ -335,7 +354,6 @@ function renderOrders() {
           <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
         </select>
       </td>
-      <td>${escapeHtml(formatDate(order.createdAt))}</td>
       <td>
         <div class="actions">
           <button class="btn btn--icon btn--outline" data-order-action="details" ${activeRequest ? 'disabled' : ''}>Details</button>
@@ -744,6 +762,11 @@ sortSelect.addEventListener('change', event => {
   state.sort = event.target.value;
   resetBouquetPage();
   renderTable();
+});
+
+ordersSearchInput.addEventListener('input', event => {
+  state.ordersQuery = event.target.value;
+  renderOrders();
 });
 
 ordersFilterSelect.addEventListener('change', event => {

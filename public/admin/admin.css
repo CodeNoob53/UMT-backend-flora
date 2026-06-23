@@ -1,22 +1,13 @@
 /* =========================================================================
-   Flora Admin — styled to match the Flora storefront
-   Light theme = site look (Hanuman + Roboto, #030c01 text, yellow→green
-   gradient pill buttons, site borders/radii). Dark theme keeps its palette.
-   All class names/structure preserved — admin.js depends on them.
+   Flora Admin - styled to match the Flora storefront.
+   Hanuman is used for brand headings; body UI uses a readable sans stack.
+   All class names/structure preserved - admin.js depends on them.
    ========================================================================= */
 
 @font-face {
   font-family: 'Hanuman';
   src: url('fonts/hanuman.woff2') format('woff2');
   font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Roboto';
-  src: url('fonts/roboto.woff2') format('woff2');
-  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -35,7 +26,7 @@
 
   /* Type */
   --font-head: 'Hanuman', 'Georgia', serif;
-  --font-body: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* ---- Light theme = storefront palette ---- */
   color-scheme: light;
@@ -330,8 +321,8 @@ textarea {
 }
 
 .toolbar--orders {
-  grid-template-columns: repeat(2, minmax(160px, 220px));
-  justify-content: end;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(160px, 220px));
+  justify-content: stretch;
 }
 
 .field,
@@ -362,6 +353,30 @@ textarea {
   border-radius: var(--radius);
   outline: none;
   transition: border-color 150ms, box-shadow 150ms;
+}
+
+.search-control {
+  position: relative;
+  display: block;
+}
+
+.search-icon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.input--search {
+  padding-left: 40px;
+}
+
+.search-control:focus-within .search-icon {
+  color: var(--accent);
 }
 
 .select--compact {
@@ -408,7 +423,7 @@ textarea {
 }
 
 .table--orders {
-  min-width: 980px;
+  min-width: 820px;
 }
 
 .table th,
@@ -450,12 +465,6 @@ textarea {
 .order-number {
   color: var(--accent-strong);
   font-weight: 600;
-}
-
-.cell-message {
-  max-width: 300px;
-  color: var(--muted);
-  white-space: normal;
 }
 
 .thumb,
