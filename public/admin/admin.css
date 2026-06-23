@@ -446,7 +446,7 @@ textarea {
 }
 
 .table th {
-  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+  color: var(--muted);
   background: var(--table-head);
   font-size: 12px;
   font-weight: 700;
