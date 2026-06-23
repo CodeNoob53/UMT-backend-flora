@@ -1,6 +1,7 @@
 const BOUQUETS_API = '/api/bouquets';
 const ORDERS_API = '/api/orders';
 const THEME_KEY = 'flora-admin-theme';
+const BOUQUETS_PER_PAGE = 8;
 
 let bouquets = [];
 let orders = [];
@@ -15,6 +16,7 @@ const state = {
   query: '',
   filter: 'all',
   sort: 'newest',
+  page: 1,
 };
 
 const tbody = document.getElementById('bouquets-tbody');
@@ -49,6 +51,11 @@ const tabButtons = [...document.querySelectorAll('[data-tab]')];
 const tabPanels = [...document.querySelectorAll('[data-panel]')];
 const addButton = document.getElementById('btn-add');
 const refreshButton = document.getElementById('btn-refresh');
+const pagination = document.getElementById('bouquets-pagination');
+const paginationSummary = document.getElementById('bouquets-pagination-summary');
+const paginationPage = document.getElementById('bouquets-pagination-page');
+const pagePrevButton = document.getElementById('btn-page-prev');
+const pageNextButton = document.getElementById('btn-page-next');
 
 function setActiveTab(nextTab) {
   activeTab = nextTab === 'orders' ? 'orders' : 'bouquets';
@@ -191,6 +198,39 @@ function getFilteredBouquets() {
     });
 }
 
+function resetBouquetPage() {
+  state.page = 1;
+}
+
+function getPaginatedBouquets(items) {
+  const pageCount = Math.max(1, Math.ceil(items.length / BOUQUETS_PER_PAGE));
+  state.page = Math.min(Math.max(state.page, 1), pageCount);
+
+  const startIndex = (state.page - 1) * BOUQUETS_PER_PAGE;
+  return {
+    items: items.slice(startIndex, startIndex + BOUQUETS_PER_PAGE),
+    pageCount,
+    startIndex,
+  };
+}
+
+function renderPagination(total, pageCount, startIndex, currentCount) {
+  pagination.hidden = total <= BOUQUETS_PER_PAGE;
+
+  if (total === 0) {
+    paginationSummary.textContent = '';
+    paginationPage.textContent = '';
+    return;
+  }
+
+  const from = startIndex + 1;
+  const to = startIndex + currentCount;
+  paginationSummary.textContent = `Showing ${from}-${to} of ${total}`;
+  paginationPage.textContent = `Page ${state.page} of ${pageCount}`;
+  pagePrevButton.disabled = activeRequest || state.page <= 1;
+  pageNextButton.disabled = activeRequest || state.page >= pageCount;
+}
+
 function updateStats() {
   totalCount.textContent = bouquets.length;
   bestsellerCount.textContent = bouquets.filter(b => b.bestseller).length;
@@ -267,6 +307,7 @@ function renderTable() {
   if (isLoading) {
     setTableStatus('Loading bouquets...');
     tbody.innerHTML = '';
+    renderPagination(0, 1, 0, 0);
     return;
   }
 
@@ -278,11 +319,14 @@ function renderTable() {
       : 'No bouquets match the current search and filters.';
     setTableStatus(message);
     tbody.innerHTML = '';
+    renderPagination(0, 1, 0, 0);
     return;
   }
 
+  const page = getPaginatedBouquets(visibleBouquets);
   setTableStatus('');
-  tbody.innerHTML = visibleBouquets.map(b => {
+  renderPagination(visibleBouquets.length, page.pageCount, page.startIndex, page.items.length);
+  tbody.innerHTML = page.items.map(b => {
     const title = escapeHtml(b.title);
     const altText = escapeHtml(b.alt || 'No alt text');
     const price = Number(b.price).toLocaleString('en-US');
@@ -331,8 +375,8 @@ async function loadBouquets() {
     showToast(error.message, 'error');
   } finally {
     isLoading = false;
-      renderTable();
-    }
+    renderTable();
+  }
 }
 
 async function loadOrders() {
@@ -598,16 +642,29 @@ ordersTbody.addEventListener('click', async event => {
 
 searchInput.addEventListener('input', event => {
   state.query = event.target.value;
+  resetBouquetPage();
   renderTable();
 });
 
 filterSelect.addEventListener('change', event => {
   state.filter = event.target.value;
+  resetBouquetPage();
   renderTable();
 });
 
 sortSelect.addEventListener('change', event => {
   state.sort = event.target.value;
+  resetBouquetPage();
+  renderTable();
+});
+
+pagePrevButton.addEventListener('click', () => {
+  state.page -= 1;
+  renderTable();
+});
+
+pageNextButton.addEventListener('click', () => {
+  state.page += 1;
   renderTable();
 });
 

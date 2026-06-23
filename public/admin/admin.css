@@ -483,6 +483,35 @@ textarea {
   font-size: 12px;
 }
 
+.btn--compact {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.pagination {
+  min-height: 58px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination-summary,
+.pagination-page {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .toast {
   position: fixed;
   right: 24px;
@@ -719,6 +748,11 @@ textarea {
   .form-grid {
     grid-template-columns: 1fr;
   }
+
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 520px) {
@@ -738,5 +772,10 @@ textarea {
 
   .form-actions .btn {
     width: 100%;
+  }
+
+  .pagination-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
