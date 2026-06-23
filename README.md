@@ -1,19 +1,59 @@
 # Flora Backend API
 
-Express REST API for the Flora flower shop project. The server works with a PostgreSQL database through Sequelize, validates request bodies with Joi, documents endpoints with Swagger UI, and supports bouquet image uploads through Multer.
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5.x-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Sequelize](https://img.shields.io/badge/Sequelize-6.x-52B0E7?logo=sequelize&logoColor=white)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-images-3448C5?logo=cloudinary&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-API%20docs-85EA2D?logo=swagger&logoColor=black)
+![Render](https://img.shields.io/badge/Deploy-Render-46E3B7?logo=render&logoColor=black)
 
-## Tech Stack
+Backend та адмін-панель для проєкту Flora flower shop. Сервер зберігає букети й замовлення в PostgreSQL, перевіряє вхідні дані через Joi, документує API через Swagger UI та завантажує фото букетів у Cloudinary.
 
-- Node.js 20+
-- Express
-- PostgreSQL
-- Sequelize
-- Joi
-- Multer
-- Cloudinary
-- Swagger UI
+<p align="center">
+  <img src="./flora_admin_prew.avif" alt="Прев'ю адмін-панелі Flora" width="920">
+</p>
 
-## Local Setup
+## Можливості
+
+- CRUD для букетів: створення, редагування, видалення, favorite, bestseller, лічильник замовлень і фото.
+- Публічне створення замовлень із фронтенду.
+- Захищене керування замовленнями в адмінці.
+- Статуси замовлень: `new`, `processed`, `completed`, `cancelled`.
+- Автоматичне збільшення `orders` у букета після створення замовлення з `productId`.
+- Basic Auth для адмін-панелі та всіх адміністративних змін.
+- Завантаження фото в Cloudinary та очищення старих фото при видаленні або заміні.
+- Swagger-документація за адресою `/api-docs`.
+- Конфігурація для деплою на Render через `render.yaml`.
+
+## Технології
+
+| Рівень | Інструменти |
+| --- | --- |
+| Runtime | Node.js 20+, Express 5 |
+| База даних | PostgreSQL, Sequelize |
+| Валідація | Joi |
+| Завантаження фото | Multer, Cloudinary |
+| Документація | Swagger UI |
+| Адмін-панель | Static HTML/CSS/JS |
+| Деплой | Render |
+
+## Структура проєкту
+
+```text
+config/        Налаштування бази даних і Cloudinary
+controllers/   Обробники HTTP-запитів
+helpers/       Спільні утиліти для upload, errors, async handlers
+middlewares/   Auth, upload і validation middleware
+models/        Sequelize-моделі
+public/admin/  Файли адмін-панелі
+routes/        API та admin routes
+schemas/       Joi-схеми валідації
+seed/          Скрипти для демо-даних
+services/      Бізнес-логіка
+```
+
+## Локальний запуск
 
 ```bash
 npm install
@@ -21,7 +61,7 @@ cp .env.example .env
 npm start
 ```
 
-Fill `.env` with real values before starting the server:
+Перед запуском потрібно заповнити `.env`:
 
 ```env
 PORT=3000
@@ -33,77 +73,96 @@ ADMIN_USER=admin
 ADMIN_PASSWORD=change_me
 ```
 
-Optional seed command:
+Додаткові seed-команди:
 
 ```bash
 npm run seed
 npm run seed:orders
 ```
 
-The bouquet seed script imports initial bouquet data from the neighboring frontend project (`../1_hw_flora/db.json`) in this local workspace. The orders seed script creates a small set of demo order requests and links them to existing bouquets when bouquets are present in the database.
+`npm run seed` імпортує початкові букети із сусіднього фронтенд-проєкту `../1_hw_flora/db.json`.
 
-## Available URLs
+`npm run seed:orders` створює демо-замовлення, прив'язує їх до наявних букетів і задає різний час створення, щоб адмінка виглядала реалістичніше.
 
-- Health check: `/health`
-- API root: `/api`
-- Bouquets API: `/api/bouquets`
-- Orders API: `/api/orders`
-- Swagger UI: `/api-docs`
-- Admin panel: `/admin`
+## Доступні адреси
 
-The admin panel is protected with Basic Auth. Bouquet mutating routes are protected as well: `POST`, `PUT`, `DELETE`, `PATCH /favorite`, and `PATCH /photo`. Orders can be created publicly from the frontend, while reading, changing status, and deleting orders are protected for the admin panel.
+| URL | Опис |
+| --- | --- |
+| `/health` | Перевірка стану сервера |
+| `/api` | Корінь API |
+| `/api/bouquets` | API букетів |
+| `/api/orders` | API замовлень |
+| `/api-docs` | Swagger UI |
+| `/admin` | Захищена адмін-панель |
+
+## Авторизація
+
+Адмін-панель використовує Basic Auth через змінні `ADMIN_USER` і `ADMIN_PASSWORD`.
+
+Захищені маршрути:
+
+- зміни букетів: `POST`, `PUT`, `DELETE`, `PATCH /favorite`, `PATCH /photo`;
+- адміністративні дії із замовленнями: `GET`, `GET /:id`, `PATCH /:id/status`, `DELETE`.
+
+Фронтенд може публічно створювати замовлення через `POST /api/orders`.
 
 ## Bouquets API
 
-| Method | Endpoint | Description |
+| Method | Endpoint | Опис |
 | --- | --- | --- |
-| GET | `/api/bouquets` | Get all bouquets |
-| GET | `/api/bouquets/:id` | Get one bouquet by id |
-| POST | `/api/bouquets` | Create bouquet |
-| PUT | `/api/bouquets/:id` | Update bouquet |
-| DELETE | `/api/bouquets/:id` | Delete bouquet |
-| PATCH | `/api/bouquets/:id/favorite` | Toggle favorite status |
-| PATCH | `/api/bouquets/:id/photo` | Upload bouquet photo |
+| GET | `/api/bouquets` | Отримати всі букети |
+| GET | `/api/bouquets/:id` | Отримати один букет за id |
+| POST | `/api/bouquets` | Створити букет |
+| PUT | `/api/bouquets/:id` | Оновити букет |
+| DELETE | `/api/bouquets/:id` | Видалити букет |
+| PATCH | `/api/bouquets/:id/favorite` | Перемкнути favorite |
+| PATCH | `/api/bouquets/:id/photo` | Завантажити фото букета |
 
 ## Orders API
 
-| Method | Endpoint | Description |
+| Method | Endpoint | Опис |
 | --- | --- | --- |
-| GET | `/api/orders` | Get all orders for admin |
-| GET | `/api/orders/:id` | Get one order by id |
-| POST | `/api/orders` | Create order request from frontend |
-| PATCH | `/api/orders/:id/status` | Update order status |
-| DELETE | `/api/orders/:id` | Soft delete order |
+| GET | `/api/orders` | Отримати всі активні замовлення для адмінки |
+| GET | `/api/orders/:id` | Отримати одне замовлення за id |
+| POST | `/api/orders` | Створити замовлення з фронтенду |
+| PATCH | `/api/orders/:id/status` | Оновити статус замовлення |
+| DELETE | `/api/orders/:id` | М'яко видалити замовлення |
 
-When an order is created with `productId`, the backend also increments the matching bouquet's `orders` counter by the submitted `quantity`.
+Якщо замовлення створюється з `productId`, backend автоматично збільшує `orders` у відповідного букета на передану `quantity`.
 
-Order status can be `new`, `processed` (in progress), `completed`, or `cancelled`.
+Замовлення мають Sequelize timestamps: `createdAt`, `updatedAt`, а також soft-delete поле `deletedAt`.
 
-Orders use Sequelize timestamps: `createdAt`, `updatedAt`, and soft-delete `deletedAt`.
+## Завантаження фото
 
-## Image Uploads
+Multer приймає файл у тимчасову директорію `temp/`. Після цього backend завантажує оригінальне зображення в Cloudinary, видаляє тимчасовий файл і зберігає отриманий URL у полі `photoURL` букета.
 
-The project uses Multer to receive uploaded files into the temporary `temp/` directory. After that, the original image is uploaded to Cloudinary, the temp file is removed, and the returned URL is saved in the bouquet's `photoURL` field.
+Оптимізація зображень навмисно делегована Cloudinary delivery transformations: `f_auto`, `q_auto`, width transformations тощо. Це розвантажує backend на Render free tier і прибирає довгу серверну обробку фото під час завантаження з адмінки.
 
-Image optimization is intentionally delegated to Cloudinary delivery transformations (`f_auto`, `q_auto`, width transformations, and browser-specific formats such as WebP/AVIF when available). This keeps the Render free tier backend lightweight and avoids long server-side image processing during admin uploads.
+Це рішення замінює постійне локальне збереження в `public/photos`. Локальне збереження може працювати під час розробки, але на Render free tier filesystem є ephemeral: файли можуть зникати після redeploy, restart або запуску нового instance. Cloudinary зберігає фото стабільно й робить їх доступними публічно.
 
-This intentionally replaces permanent local storage in `public/photos`. Local storage can work during development, but on Render free tier the filesystem is ephemeral: uploaded files may disappear after redeploys, restarts, or new instances. Cloudinary keeps uploaded bouquet photos persistent and publicly available, which makes the deployed backend more stable.
+Коли букет видаляється, його фото в Cloudinary також видаляється. Коли фото замінюється з тим самим slug, Cloudinary перезаписує існуючий public id. Якщо slug змінився, старе фото очищується після успішного завантаження нового.
 
-When a bouquet is deleted, its Cloudinary image is removed as well. When a photo is replaced with the same slug, Cloudinary overwrites the existing public id; if the slug changed, the old image is cleaned up after the new upload succeeds.
+Директорія `public/photos/.gitkeep` залишена в репозиторії, щоб відповідати початковій структурі курсового проєкту й залишити місце для локального fallback, якщо він знадобиться.
 
-The `public/photos/.gitkeep` directory is kept in the repository to match the original course structure and to leave room for a local-storage fallback if needed.
+## Деплой
 
-## Deploy
+У репозиторії є `render.yaml` для деплою на Render:
 
-The repository includes `render.yaml` for Render deployment:
+- web service: `npm install` + `npm start`;
+- PostgreSQL database;
+- required environment variables для database, Cloudinary та admin auth.
 
-- web service: `npm install` + `npm start`
-- PostgreSQL database
-- required environment variables for database, Cloudinary, and admin auth
+Після деплою варто перевірити:
 
-After deployment, check:
+```text
+GET /health
+GET /api/bouquets
+/api-docs
+/admin
+```
 
-- `GET /health`
-- `GET /api/bouquets`
-- `/api-docs`
-- `/admin`
+## Примітки
+
+- Swagger JSON зберігається в `swagger.json`.
+- Адмін-панель є статичною і знаходиться в `public/admin`.
+- Backend не використовує server-side image processing через Render free tier; оптимізацію доставки фото виконує Cloudinary.
