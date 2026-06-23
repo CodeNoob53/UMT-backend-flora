@@ -32,7 +32,7 @@ const Order = sequelize.define(
       type: DataTypes.INTEGER,
     },
     status: {
-      type: DataTypes.ENUM('new', 'processed', 'cancelled'),
+      type: DataTypes.ENUM('new', 'processed', 'completed', 'cancelled'),
       defaultValue: 'new',
     },
   },

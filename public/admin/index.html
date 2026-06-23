@@ -132,6 +132,29 @@
 
       <p class="table-status" id="orders-status" hidden></p>
 
+      <div class="toolbar toolbar--orders">
+        <label class="field">
+          <span class="field-label">Status</span>
+          <select class="select" id="orders-filter-select">
+            <option value="all">All orders</option>
+            <option value="new">New</option>
+            <option value="processed">In progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="field-label">Sort</span>
+          <select class="select" id="orders-sort-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="customer">Customer A-Z</option>
+            <option value="status">Status</option>
+          </select>
+        </label>
+      </div>
+
       <div class="table-wrap">
         <table class="table table--orders">
           <thead>

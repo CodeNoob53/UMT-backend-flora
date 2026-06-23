@@ -257,6 +257,11 @@ textarea {
   border-bottom: 1px solid var(--border);
 }
 
+.toolbar--orders {
+  grid-template-columns: repeat(2, minmax(160px, 220px));
+  justify-content: end;
+}
+
 .field,
 .form-row {
   display: flex;

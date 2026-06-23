@@ -5,6 +5,14 @@ import sequelize from './config/db.js';
 
 const PORT = process.env.PORT ?? 3000;
 
+async function ensureOrderCompletedStatus() {
+  try {
+    await sequelize.query('ALTER TYPE "enum_Orders_status" ADD VALUE IF NOT EXISTS \'completed\';');
+  } catch (error) {
+    if (error.original?.code !== '42704') throw error;
+  }
+}
+
 async function ensureOrderSoftDeleteColumn() {
   const queryInterface = sequelize.getQueryInterface();
   const table = await queryInterface.describeTable('Orders');
@@ -21,6 +29,9 @@ sequelize
   .authenticate()
   .then(() => {
     console.log('Database connection successful');
+    return ensureOrderCompletedStatus();
+  })
+  .then(() => {
     return sequelize.sync();
   })
   .then(() => ensureOrderSoftDeleteColumn())

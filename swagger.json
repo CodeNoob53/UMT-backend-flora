@@ -175,7 +175,7 @@
           "productId": { "type": "integer" },
           "productTitle": { "type": "string" },
           "productPrice": { "type": "integer" },
-          "status": { "type": "string", "enum": ["new", "processed", "cancelled"] },
+          "status": { "type": "string", "enum": ["new", "processed", "completed", "cancelled"] },
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" },
           "deletedAt": { "type": "string", "format": "date-time", "nullable": true }
@@ -199,7 +199,7 @@
         "type": "object",
         "required": ["status"],
         "properties": {
-          "status": { "type": "string", "enum": ["new", "processed", "cancelled"] }
+          "status": { "type": "string", "enum": ["new", "processed", "completed", "cancelled"] }
         }
       },
       "BouquetCreate": {

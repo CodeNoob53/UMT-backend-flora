@@ -77,6 +77,8 @@ The admin panel is protected with Basic Auth. Bouquet mutating routes are protec
 
 When an order is created with `productId`, the backend also increments the matching bouquet's `orders` counter by the submitted `quantity`.
 
+Order status can be `new`, `processed` (in progress), `completed`, or `cancelled`.
+
 Orders use Sequelize timestamps: `createdAt`, `updatedAt`, and soft-delete `deletedAt`.
 
 ## Image Uploads

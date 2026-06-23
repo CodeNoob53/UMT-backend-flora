@@ -4,6 +4,13 @@ import Bouquet from '../models/Bouquet.js';
 import Order from '../models/Order.js';
 
 await sequelize.authenticate();
+
+try {
+  await sequelize.query('ALTER TYPE "enum_Orders_status" ADD VALUE IF NOT EXISTS \'completed\';');
+} catch (error) {
+  if (error.original?.code !== '42704') throw error;
+}
+
 await sequelize.sync();
 
 const bouquets = await Bouquet.findAll({
@@ -22,6 +29,15 @@ const product = index => {
   };
 };
 
+const now = Date.now();
+const hours = value => value * 60 * 60 * 1000;
+const timestamp = (createdHoursAgo, updatedHoursLater = 0) => {
+  const createdAt = new Date(now - hours(createdHoursAgo));
+  const updatedAt = new Date(createdAt.getTime() + hours(updatedHoursLater));
+
+  return { createdAt, updatedAt };
+};
+
 const orders = [
   {
     name: 'Anna Reed',
@@ -31,6 +47,7 @@ const orders = [
     quantity: 1,
     status: 'new',
     ...product(0),
+    ...timestamp(2),
   },
   {
     name: 'Mia Johnson',
@@ -38,8 +55,9 @@ const orders = [
     address: '22 Garden Street, Apt 8',
     message: 'Birthday bouquet, pastel colors preferred.',
     quantity: 2,
-    status: 'processed',
+    status: 'completed',
     ...product(1),
+    ...timestamp(7, 2),
   },
   {
     name: 'Sofia Miller',
@@ -47,8 +65,9 @@ const orders = [
     address: 'Office reception, 18 Rose Lane',
     message: 'Corporate delivery. Please call before arrival.',
     quantity: 1,
-    status: 'processed',
+    status: 'completed',
     ...product(2),
+    ...timestamp(12, 3),
   },
   {
     name: 'Emily Carter',
@@ -58,6 +77,7 @@ const orders = [
     quantity: 1,
     status: 'processed',
     ...product(3),
+    ...timestamp(18, 1),
   },
   {
     name: 'Olivia Brown',
@@ -67,6 +87,7 @@ const orders = [
     quantity: 1,
     status: 'cancelled',
     ...product(4),
+    ...timestamp(25, 1),
   },
   {
     name: 'Grace Wilson',
@@ -74,8 +95,9 @@ const orders = [
     address: '11 Lily Court',
     message: 'Anniversary order, please make it elegant.',
     quantity: 1,
-    status: 'processed',
+    status: 'completed',
     ...product(0),
+    ...timestamp(32, 5),
   },
   {
     name: 'Lily Moore',
@@ -83,8 +105,9 @@ const orders = [
     address: 'Hotel lobby, 5 Queen Street',
     message: 'Guest pickup at reception.',
     quantity: 3,
-    status: 'processed',
+    status: 'completed',
     ...product(1),
+    ...timestamp(40, 6),
   },
   {
     name: 'Chloe Taylor',
@@ -94,6 +117,7 @@ const orders = [
     quantity: 1,
     status: 'new',
     ...product(2),
+    ...timestamp(49),
   },
 ];
 

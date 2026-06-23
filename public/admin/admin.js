@@ -17,6 +17,8 @@ const state = {
   filter: 'all',
   sort: 'newest',
   page: 1,
+  ordersFilter: 'all',
+  ordersSort: 'newest',
 };
 
 const tbody = document.getElementById('bouquets-tbody');
@@ -31,6 +33,8 @@ const toast = document.getElementById('toast');
 const searchInput = document.getElementById('search-input');
 const filterSelect = document.getElementById('filter-select');
 const sortSelect = document.getElementById('sort-select');
+const ordersFilterSelect = document.getElementById('orders-filter-select');
+const ordersSortSelect = document.getElementById('orders-sort-select');
 const tableStatus = document.getElementById('table-status');
 const ordersStatus = document.getElementById('orders-status');
 const themeToggle = document.getElementById('theme-toggle');
@@ -231,6 +235,19 @@ function renderPagination(total, pageCount, startIndex, currentCount) {
   pageNextButton.disabled = activeRequest || state.page >= pageCount;
 }
 
+function getFilteredOrders() {
+  const statusRank = { new: 1, processed: 2, completed: 3, cancelled: 4 };
+
+  return orders
+    .filter(order => state.ordersFilter === 'all' || order.status === state.ordersFilter)
+    .sort((a, b) => {
+      if (state.ordersSort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (state.ordersSort === 'customer') return String(a.name).localeCompare(String(b.name));
+      if (state.ordersSort === 'status') return (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99);
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+}
+
 function updateStats() {
   totalCount.textContent = bouquets.length;
   bestsellerCount.textContent = bouquets.filter(b => b.bestseller).length;
@@ -275,8 +292,16 @@ function renderOrders() {
     return;
   }
 
+  const visibleOrders = getFilteredOrders();
+
+  if (visibleOrders.length === 0) {
+    setOrdersStatus('No orders match the current filter.');
+    ordersTbody.innerHTML = '';
+    return;
+  }
+
   setOrdersStatus('');
-  ordersTbody.innerHTML = orders.map(order => `
+  ordersTbody.innerHTML = visibleOrders.map(order => `
     <tr data-id="${order.id}">
       <td>
         <strong>${escapeHtml(order.name)}</strong>
@@ -288,7 +313,8 @@ function renderOrders() {
       <td>
         <select class="select select--compact order-status-select" data-order-action="status" ${activeRequest ? 'disabled' : ''}>
           <option value="new" ${order.status === 'new' ? 'selected' : ''}>New</option>
-          <option value="processed" ${order.status === 'processed' ? 'selected' : ''}>Processed</option>
+          <option value="processed" ${order.status === 'processed' ? 'selected' : ''}>In progress</option>
+          <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
           <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
         </select>
       </td>
@@ -655,6 +681,16 @@ sortSelect.addEventListener('change', event => {
   state.sort = event.target.value;
   resetBouquetPage();
   renderTable();
+});
+
+ordersFilterSelect.addEventListener('change', event => {
+  state.ordersFilter = event.target.value;
+  renderOrders();
+});
+
+ordersSortSelect.addEventListener('change', event => {
+  state.ordersSort = event.target.value;
+  renderOrders();
 });
 
 pagePrevButton.addEventListener('click', () => {

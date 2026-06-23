@@ -12,5 +12,5 @@ export const orderCreateSchema = Joi.object({
 });
 
 export const orderStatusSchema = Joi.object({
-  status: Joi.string().valid('new', 'processed', 'cancelled').required(),
+  status: Joi.string().valid('new', 'processed', 'completed', 'cancelled').required(),
 });
