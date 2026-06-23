@@ -37,6 +37,7 @@ const Order = sequelize.define(
     },
   },
   {
+    timestamps: true,
     paranoid: true,
   }
 );

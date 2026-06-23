@@ -228,6 +228,7 @@ function renderOrders() {
         </select>
       </td>
       <td>${escapeHtml(formatDate(order.createdAt))}</td>
+      <td>${escapeHtml(formatDate(order.updatedAt))}</td>
       <td>
         <button class="btn btn--icon btn--danger" data-order-action="delete" ${activeRequest ? 'disabled' : ''}>Delete</button>
       </td>
