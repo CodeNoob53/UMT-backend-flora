@@ -25,6 +25,8 @@ const tbody = document.getElementById('bouquets-tbody');
 const ordersTbody = document.getElementById('orders-tbody');
 const modalOverlay = document.getElementById('modal-overlay');
 const deleteOverlay = document.getElementById('delete-overlay');
+const orderDetailsOverlay = document.getElementById('order-details-overlay');
+const orderDetailsContent = document.getElementById('order-details-content');
 const photoPreviewOverlay = document.getElementById('photo-preview-overlay');
 const photoPreviewImg = document.getElementById('photo-preview-img');
 const form = document.getElementById('bouquet-form');
@@ -276,11 +278,25 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatOrderNumber(order) {
+  const year = order.createdAt ? new Date(order.createdAt).getFullYear() : new Date().getFullYear();
+  return `FL-${year}-${String(order.id).padStart(4, '0')}`;
+}
+
 function formatOrderProduct(order) {
   const title = order.productTitle || (order.productId ? `Product #${order.productId}` : 'Not selected');
   const quantity = Number(order.quantity ?? 1);
   const price = order.productPrice ? `$${Number(order.productPrice).toLocaleString('en-US')}` : '';
   return `${title}${quantity > 1 ? ` x${quantity}` : ''}${price ? ` (${price})` : ''}`;
+}
+
+function getOrderStatusLabel(status) {
+  return {
+    new: 'New',
+    processed: 'In progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+  }[status] ?? status;
 }
 
 function renderOrders() {
@@ -305,6 +321,7 @@ function renderOrders() {
     <tr data-id="${order.id}">
       <td>
         <strong>${escapeHtml(order.name)}</strong>
+        <span class="table-subtext order-number">${escapeHtml(formatOrderNumber(order))}</span>
         <span class="table-subtext">${escapeHtml(order.phone)}</span>
         <span class="table-subtext">${escapeHtml(order.address || 'No address')}</span>
       </td>
@@ -320,7 +337,10 @@ function renderOrders() {
       </td>
       <td>${escapeHtml(formatDate(order.createdAt))}</td>
       <td>
-        <button class="btn btn--icon btn--danger" data-order-action="delete" ${activeRequest ? 'disabled' : ''}>Delete</button>
+        <div class="actions">
+          <button class="btn btn--icon btn--outline" data-order-action="details" ${activeRequest ? 'disabled' : ''}>Details</button>
+          <button class="btn btn--icon btn--danger" data-order-action="delete" ${activeRequest ? 'disabled' : ''}>Delete</button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -457,6 +477,42 @@ function closePhotoPreview() {
   photoPreviewOverlay.classList.add('hidden');
   photoPreviewImg.src = '';
   photoPreviewImg.alt = '';
+}
+
+function renderDetailItem(label, value) {
+  return `
+    <div class="details-item">
+      <span class="details-label">${escapeHtml(label)}</span>
+      <strong class="details-value">${escapeHtml(value || 'None')}</strong>
+    </div>
+  `;
+}
+
+function openOrderDetails(order) {
+  if (!order) return;
+
+  const productPrice = order.productPrice
+    ? `$${Number(order.productPrice).toLocaleString('en-US')}`
+    : 'Not set';
+
+  document.getElementById('order-details-title').textContent = formatOrderNumber(order);
+  orderDetailsContent.innerHTML = [
+    renderDetailItem('Status', getOrderStatusLabel(order.status)),
+    renderDetailItem('Created', formatDate(order.createdAt)),
+    renderDetailItem('Customer', order.name),
+    renderDetailItem('Phone', order.phone),
+    renderDetailItem('Address', order.address || 'No address'),
+    renderDetailItem('Product', order.productTitle || 'Not selected'),
+    renderDetailItem('Quantity', String(order.quantity ?? 1)),
+    renderDetailItem('Price', productPrice),
+    renderDetailItem('Message', order.message || 'No message'),
+  ].join('');
+  orderDetailsOverlay.classList.remove('hidden');
+}
+
+function closeOrderDetails() {
+  orderDetailsOverlay.classList.add('hidden');
+  orderDetailsContent.innerHTML = '';
 }
 
 function openPhotoUpload(id) {
@@ -646,6 +702,13 @@ ordersTbody.addEventListener('change', async event => {
 });
 
 ordersTbody.addEventListener('click', async event => {
+  const detailsButton = event.target.closest('[data-order-action="details"]');
+  if (detailsButton) {
+    const id = Number(detailsButton.closest('tr').dataset.id);
+    openOrderDetails(orders.find(order => order.id === id));
+    return;
+  }
+
   const button = event.target.closest('[data-order-action="delete"]');
   if (!button || activeRequest) return;
 
@@ -733,6 +796,7 @@ document.getElementById('btn-refresh-orders').addEventListener('click', loadOrde
 addButton.addEventListener('click', () => openModal());
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('photo-preview-close').addEventListener('click', closePhotoPreview);
+document.getElementById('order-details-close').addEventListener('click', closeOrderDetails);
 document.getElementById('btn-cancel').addEventListener('click', closeModal);
 document.getElementById('btn-delete-cancel').addEventListener('click', () => {
   deleteOverlay.classList.add('hidden');
@@ -748,6 +812,10 @@ photoPreviewOverlay.addEventListener('click', event => {
   if (event.target === photoPreviewOverlay) closePhotoPreview();
 });
 
+orderDetailsOverlay.addEventListener('click', event => {
+  if (event.target === orderDetailsOverlay) closeOrderDetails();
+});
+
 window.addEventListener('keydown', event => {
   if (event.key !== 'Escape') return;
   if (activeRequest) {
@@ -755,6 +823,7 @@ window.addEventListener('keydown', event => {
     return;
   }
   closePhotoPreview();
+  closeOrderDetails();
   closeModal();
   deleteOverlay.classList.add('hidden');
 });
