@@ -8,6 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "seed": "node seed/bouquets.js",
+    "seed:feedbacks": "node seed/feedbacks.js",
     "seed:orders": "node seed/orders.js"
   },
   "engines": {
