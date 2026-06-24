@@ -5,8 +5,9 @@ import { HttpError } from '../helpers/HttpError.js';
 import { asyncHandler } from '../helpers/asyncHandler.js';
 
 export const getAll = asyncHandler(async (req, res) => {
-  const bouquets = await bouquetService.getAll();
-  res.json(bouquets);
+  const { _page, _per_page, category, bestseller } = req.query;
+  const result = await bouquetService.getAll({ page: _page, perPage: _per_page, category, bestseller });
+  res.json(result);
 });
 
 export const getById = asyncHandler(async (req, res) => {
